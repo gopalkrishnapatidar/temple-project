@@ -20,15 +20,15 @@ Phase 0 - Project Foundation
 
 Current Module:
 
-Module 01 - Git, GitHub & Local Development
+Module 02 - Linux & Networking Foundation
 
 Current Module Status:
 
-COMPLETED
+NOT STARTED
 
 Completed Modules:
 
-1 / 44
+2 / 44
 
 ---
 
@@ -50,7 +50,7 @@ COMPLETED
 
 ## Current Module
 
-### Module 01 - Git, GitHub & Local Development
+### Module 02 - Linux & Networking Foundation
 
 Status:
 
@@ -58,44 +58,47 @@ NOT STARTED
 
 Objective:
 
-Establish Git, GitHub, and local development workflow. Do not start until explicitly approved.
+Learn Linux administration and networking fundamentals for DevOps/SRE work. Do not start until explicitly approved.
 
 ---
-
-
 
 ## Completed Modules
 
 - [x] Module 00 - Project Architecture & Foundation
+- [x] Module 01 - Git, GitHub & Local Development
 
 ---
-
-
 
 ## Current Learning
 
-None yet for Module 01.
+None yet for Module 02.
 
-Module 00 architecture learning review completed and approved:
+Module 01 Git/GitHub learning review completed and approved:
 
-- modular monolith vs microservices
-- domain map and request flow
-- PostgreSQL as transactional source of truth
-- booking/payment invariants without choosing hold/confirm algorithm
-- evolution path, security, scalability/HA, cost, and interview readiness
+- working directory, staging area, local repository
+- HEAD, commit hash (tree, parent, metadata, message)
+- local branch vs remote branch vs remote-tracking branch
+- fetch vs pull; git fetch --prune
+- feature branch + PR + squash merge workflow
+- diff/staged, restore, reset vs revert, merge conflicts, branch protection
 
 ---
 
-
-
 ## Implementation Completed
 
-Documentation only (Module 00):
+Module 00 documentation:
 
 - /docs/architecture/PROJECT_OVERVIEW.md
 - /docs/architecture/BUSINESS_DOMAINS.md
 - /docs/architecture/INITIAL_ARCHITECTURE.md
 - /docs/architecture/EVOLUTION_ROADMAP.md
+
+Module 01 documentation:
+
+- /docs/git/GIT_WORKFLOW.md
+- /docs/git/GIT_COMMANDS.md
+- /docs/git/GITHUB_PULL_REQUESTS.md
+- /docs/git/GIT_TROUBLESHOOTING.md
 
 No application, Docker, Kubernetes, Helm, Terraform, AWS, CI/CD, Redis, Kafka, database, or monitoring implementation.
 
@@ -108,10 +111,18 @@ No application, Docker, Kubernetes, Helm, Terraform, AWS, CI/CD, Redis, Kafka, d
 Module 00 validation (not automated tests):
 
 - All four architecture documents exist.
-- Content is consistent with /docs/AI_CONTEXT.md (modular monolith first, PostgreSQL as transactional SoT, Redis/Kafka not authoritative for bookings, local-first cost, secrets not hardcoded).
-- Booking/payment: concurrency-safe capacity, idempotent booking and payment, failed/abandoned payments must not permanently consume capacity; reservation/hold/confirmation strategy deferred.
-- Confirmed no future-module implementation files were added.
+- Content is consistent with /docs/AI_CONTEXT.md.
 - Architecture learning review completed and approved by the developer.
+
+Module 01 validation (hands-on, no commit/push during implementation):
+
+- All four Git documentation files exist.
+- Reviewed project Git history (init → Module 00 PR #1 squash merge).
+- Ran `git fetch --prune`; stale `origin/feature/module-00-foundation` removed after GitHub branch deletion.
+- Demonstrated `git diff` vs `git diff --staged` using Module 01 doc files (2 staged, 2 unstaged during exercise).
+- Confirmed no application or infrastructure files added.
+- No destructive Git commands, commits, or pushes performed during Module 01 implementation.
+- Git/GitHub learning review completed and approved by the developer.
 
 ---
 
@@ -127,7 +138,13 @@ None.
 
 ## Important Commands Learned
 
-None (documentation module).
+Module 01:
+
+- git status, git diff, git diff --staged
+- git add, git restore, git restore --staged
+- git branch, git branch -a, git log --oneline --graph
+- git fetch, git fetch --prune, git pull, git push (documented; push not run this session)
+- git switch, git checkout -b
 
 ---
 
@@ -135,11 +152,21 @@ None (documentation module).
 
 ## Important Concepts Learned
 
+Module 00:
+
 - Modular monolith vs microservices timing
 - Domain boundaries inside one deployable backend
 - PostgreSQL as transactional source of truth
-- Capacity and payment idempotency as architecture constraints, not a premature algorithm
+- Capacity and payment idempotency as architecture constraints
 - Staged evolution toward containers, Kubernetes, GitOps, AWS, and observability
+
+Module 01:
+
+- Working directory, staging area, local repository
+- Local branch vs remote branch vs remote-tracking branch (origin/*)
+- fetch vs pull; git fetch --prune for stale remote refs
+- Feature branch + PR + squash merge workflow (Module 00 example)
+- Safe undo: restore unstaged, unstage, revert for published commits
 
 ---
 
@@ -147,7 +174,9 @@ None (documentation module).
 
 ## Failure Scenarios Practiced
 
-None (design-only). Identified for later modules: concurrent overbooking, duplicate submits, abandoned payments consuming capacity, notification delivery failure, process crash mid-request.
+Module 00 (design-only): concurrent overbooking, duplicate submits, abandoned payments, notification failure, process crash mid-request.
+
+Module 01 (documented/conceptual): stale remote-tracking ref after GitHub branch delete; merge conflicts; bad local commit; accidentally staging wrong file.
 
 ---
 
@@ -155,7 +184,9 @@ None (design-only). Identified for later modules: concurrent overbooking, duplic
 
 ## Security Review
 
-Documented future requirements only: authentication, authorization, RBAC, secrets, TLS, encryption, audit logging, payment safety (mock first), least privilege. No security infrastructure implemented.
+Module 00: documented future requirements only (auth, RBAC, secrets, TLS, audit, mock payments).
+
+Module 01: never commit secrets; revert/rotate if credentials committed; protected main later; no force push to shared branches.
 
 ---
 
@@ -191,35 +222,37 @@ Module 00: no cloud cost. Evolution roadmap keeps paid AWS resources in later, j
 
 ## Interview Questions Reviewed
 
-Module 00 learning review completed and approved:
+Module 00 learning review completed and approved.
 
-- Architecture Q&A (monolith vs microservices, capacity under concurrency, SoT for bookings, idempotency, evolution path)
-- Scenario-based interview questions reviewed
-- Developer confirmed readiness to explain Module 00 without AI assistance
+Module 01 learning review completed and approved:
+
+- Git fundamentals, remotes, PR workflow, merge strategies
+- Troubleshooting scenarios (stale refs, conflicts, revert vs reset)
+- Developer confirmed readiness to explain Module 01 without AI assistance
 
 ---
-
-
 
 ## Git Status
 
-Module 00 COMPLETED. Module 01 is next and NOT STARTED.
+Branch: feature/module-01-git-workflow
+
+Module 01 COMPLETED. Module 02 is next and NOT STARTED.
+
+Uncommitted changes present locally (Module 01 docs + status update).
 
 Suggested commit:
 
-docs: complete Module 00 architecture foundation and status
+docs: complete Module 01 Git and GitHub workflow documentation
 
 ---
 
-
-
 ## Next Module
 
-Module 01 - Git, GitHub & Local Development
+Module 02 - Linux & Networking Foundation
 
 Status: NOT STARTED
 
-Do NOT start Module 01 until explicitly approved.
+Do NOT start Module 02 until explicitly approved.
 
 ---
 
@@ -233,7 +266,7 @@ Do NOT start Module 01 until explicitly approved.
 
 - [x] Module 00 - Project Architecture & Foundation
 
-- [ ] Module 01 - Git, GitHub & Local Development
+- [x] Module 01 - Git, GitHub & Local Development
 
 - [ ] Module 02 - Linux & Networking Foundation
 
