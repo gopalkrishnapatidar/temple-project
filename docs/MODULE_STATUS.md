@@ -20,7 +20,7 @@ Phase 0 - Project Foundation
 
 Current Module:
 
-Module 02 - Linux & Networking Foundation
+Module 03 - Spring Boot Backend Foundation
 
 Current Module Status:
 
@@ -28,7 +28,7 @@ NOT STARTED
 
 Completed Modules:
 
-2 / 44
+3 / 44
 
 ---
 
@@ -50,7 +50,7 @@ COMPLETED
 
 ## Current Module
 
-### Module 02 - Linux & Networking Foundation
+### Module 03 - Spring Boot Backend Foundation
 
 Status:
 
@@ -58,7 +58,7 @@ NOT STARTED
 
 Objective:
 
-Learn Linux administration and networking fundamentals for DevOps/SRE work. Do not start until explicitly approved.
+Establish the Spring Boot backend foundation for the Temple Digital Services Platform.
 
 ---
 
@@ -66,21 +66,15 @@ Learn Linux administration and networking fundamentals for DevOps/SRE work. Do n
 
 - [x] Module 00 - Project Architecture & Foundation
 - [x] Module 01 - Git, GitHub & Local Development
+- [x] Module 02 - Linux & Networking Foundation
 
 ---
 
 ## Current Learning
 
-None yet for Module 02.
+Module 02 Linux and networking learning review completed and approved. Hands-on labs completed (ipconfig, nslookup, ping, curl, temporary HTTP server, connection refused, DNS failure).
 
-Module 01 Git/GitHub learning review completed and approved:
-
-- working directory, staging area, local repository
-- HEAD, commit hash (tree, parent, metadata, message)
-- local branch vs remote branch vs remote-tracking branch
-- fetch vs pull; git fetch --prune
-- feature branch + PR + squash merge workflow
-- diff/staged, restore, reset vs revert, merge conflicts, branch protection
+Module 03 Spring Boot backend foundation — not started.
 
 ---
 
@@ -99,6 +93,13 @@ Module 01 documentation:
 - /docs/git/GIT_COMMANDS.md
 - /docs/git/GITHUB_PULL_REQUESTS.md
 - /docs/git/GIT_TROUBLESHOOTING.md
+
+Module 02 documentation:
+
+- /docs/linux-networking/LINUX_FOUNDATIONS.md
+- /docs/linux-networking/NETWORKING_FOUNDATIONS.md
+- /docs/linux-networking/TROUBLESHOOTING_COMMANDS.md
+- /docs/linux-networking/HANDS_ON_EXERCISES.md
 
 No application, Docker, Kubernetes, Helm, Terraform, AWS, CI/CD, Redis, Kafka, database, or monitoring implementation.
 
@@ -124,6 +125,17 @@ Module 01 validation (hands-on, no commit/push during implementation):
 - No destructive Git commands, commits, or pushes performed during Module 01 implementation.
 - Git/GitHub learning review completed and approved by the developer.
 
+Module 02 validation (hands-on, safe local commands only):
+
+- All four linux-networking documents exist.
+- Ran ipconfig, nslookup, ping, curl -I https://example.com.
+- Started python -m http.server 8888; verified 0.0.0.0:8888 LISTENING; curl http://127.0.0.1:8888/ succeeded.
+- Identified PID 16516 (python); stopped gracefully with Stop-Process.
+- Demonstrated connection refused (127.0.0.1:59999) and DNS failure (invalid hostname).
+- Documented error classification: DNS, refused, timeout, TLS, HTTP 4xx/5xx.
+- No new software installed; no firewall or service changes; no app/infra files added.
+- Linux and networking learning review completed and approved by the developer.
+
 ---
 
 
@@ -143,8 +155,15 @@ Module 01:
 - git status, git diff, git diff --staged
 - git add, git restore, git restore --staged
 - git branch, git branch -a, git log --oneline --graph
-- git fetch, git fetch --prune, git pull, git push (documented; push not run this session)
+- git fetch, git fetch --prune, git pull, git push (documented)
 - git switch, git checkout -b
+
+Module 02:
+
+- ipconfig, nslookup, ping, curl
+- netstat -ano, Test-NetConnection, Get-Process, Stop-Process
+- python -m http.server (temporary lab)
+- Linux equivalents documented: ip addr, dig, ss, kill, journalctl, systemctl
 
 ---
 
@@ -165,8 +184,16 @@ Module 01:
 - Working directory, staging area, local repository
 - Local branch vs remote branch vs remote-tracking branch (origin/*)
 - fetch vs pull; git fetch --prune for stale remote refs
-- Feature branch + PR + squash merge workflow (Module 00 example)
+- Feature branch + PR + squash merge workflow
 - Safe undo: restore unstaged, unstage, revert for published commits
+
+Module 02:
+
+- Linux filesystem, permissions, processes, signals, systemd/logs
+- IP, ports, TCP/UDP, DNS, HTTP/HTTPS, TLS, client/server
+- 127.0.0.1 / localhost vs 0.0.0.0 bind address (container relevance)
+- Error classification: DNS, refused, timeout, TLS, 4xx, 5xx
+- Layer-by-layer incident troubleshooting mindset
 
 ---
 
@@ -176,7 +203,9 @@ Module 01:
 
 Module 00 (design-only): concurrent overbooking, duplicate submits, abandoned payments, notification failure, process crash mid-request.
 
-Module 01 (documented/conceptual): stale remote-tracking ref after GitHub branch delete; merge conflicts; bad local commit; accidentally staging wrong file.
+Module 01 (documented/conceptual): stale remote-tracking ref; merge conflicts; bad local commit; accidentally staging wrong file.
+
+Module 02 (hands-on): connection refused on closed port; DNS NXDOMAIN; temporary HTTP server bind/listen/access/stop.
 
 ---
 
@@ -187,6 +216,8 @@ Module 01 (documented/conceptual): stale remote-tracking ref after GitHub branch
 Module 00: documented future requirements only (auth, RBAC, secrets, TLS, audit, mock payments).
 
 Module 01: never commit secrets; revert/rotate if credentials committed; protected main later; no force push to shared branches.
+
+Module 02: least privilege file permissions; TLS for production traffic; do not expose dev servers (0.0.0.0) without firewall awareness.
 
 ---
 
@@ -224,35 +255,31 @@ Module 00: no cloud cost. Evolution roadmap keeps paid AWS resources in later, j
 
 Module 00 learning review completed and approved.
 
-Module 01 learning review completed and approved:
+Module 01 learning review completed and approved.
 
-- Git fundamentals, remotes, PR workflow, merge strategies
-- Troubleshooting scenarios (stale refs, conflicts, revert vs reset)
-- Developer confirmed readiness to explain Module 01 without AI assistance
+Module 02 learning review completed and approved.
 
 ---
 
 ## Git Status
 
-Branch: feature/module-01-git-workflow
+Branch: feature/module-01-git-workflow (or current feature branch)
 
-Module 01 COMPLETED. Module 02 is next and NOT STARTED.
-
-Uncommitted changes present locally (Module 01 docs + status update).
+Module 02 marked COMPLETED. Uncommitted changes present locally.
 
 Suggested commit:
 
-docs: complete Module 01 Git and GitHub workflow documentation
+docs: add Module 02 Linux and networking foundation
 
 ---
 
 ## Next Module
 
-Module 02 - Linux & Networking Foundation
+Module 03 - Spring Boot Backend Foundation
 
 Status: NOT STARTED
 
-Do NOT start Module 02 until explicitly approved.
+Awaiting explicit approval before implementation.
 
 ---
 
@@ -268,7 +295,7 @@ Do NOT start Module 02 until explicitly approved.
 
 - [x] Module 01 - Git, GitHub & Local Development
 
-- [ ] Module 02 - Linux & Networking Foundation
+- [x] Module 02 - Linux & Networking Foundation
 
 
 
