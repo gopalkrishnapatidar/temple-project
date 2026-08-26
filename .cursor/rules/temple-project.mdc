@@ -1,0 +1,106 @@
+---
+description: Permanent rules for the Temple Digital Services Platform
+alwaysApply: true
+---
+
+# Temple Digital Services Platform - Cursor Project Rules
+
+Before performing any project work, read:
+
+- /docs/AI_CONTEXT.md
+- /docs/MODULE_STATUS.md
+
+When working on a module, also follow:
+
+- /docs/LEARNING_PROMPT.md
+
+These files are the project's source of truth for AI-assisted development.
+
+## Core Rules
+
+1. Work only on the currently approved module.
+
+2. Never automatically implement future modules.
+
+3. Follow the architecture, security, cost, testing and learning rules
+   defined in /docs/AI_CONTEXT.md.
+
+4. Use /docs/MODULE_STATUS.md to determine the current project state.
+
+5. Follow /docs/LEARNING_PROMPT.md for the learning workflow.
+
+6. Before significant implementation:
+   - explain the objective
+   - explain the architecture
+   - inspect only relevant files
+   - provide a concise plan
+   - identify files that will change
+
+7. Optimize Cursor token usage:
+   - do not scan unrelated files
+   - do not repeat existing documentation
+   - do not regenerate working code
+   - do not perform unnecessary refactoring
+
+8. Never hard-code or expose:
+   - passwords
+   - API keys
+   - AWS credentials
+   - tokens
+   - private keys
+   - production secrets
+
+9. For infrastructure changes:
+   - explain cost first
+   - prefer local resources when possible
+   - do not automatically run destructive commands
+   - do not automatically run terraform apply
+   - do not automatically run terraform destroy
+   - do not create expensive AWS resources without approval
+
+10. Important changes must be tested.
+
+11. Important failures should be understood and troubleshot rather than
+    hidden with random fixes.
+
+12. Consider where applicable:
+    - security
+    - scalability
+    - high availability
+    - observability
+    - reliability
+    - cost
+
+13. After completing a module:
+    - explain what was implemented
+    - explain important commands
+    - explain tests
+    - explain troubleshooting
+    - provide interview questions
+    - update /docs/MODULE_STATUS.md
+    - suggest a Git commit message
+
+14. Never automatically start the next module.
+
+15. Stop after the current module is completed and wait for developer
+    instruction.
+
+## Primary Learning Principle
+
+The project workflow is:
+
+LEARN
+→ DESIGN
+→ IMPLEMENT
+→ TEST
+→ BREAK SAFELY
+→ TROUBLESHOOT
+→ FIX
+→ DOCUMENT
+→ EXPLAIN
+→ COMMIT
+
+The objective is not maximum AI-generated code.
+
+The objective is genuine production-oriented DevOps/SRE hands-on experience
+and interview readiness.
