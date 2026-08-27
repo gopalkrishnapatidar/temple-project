@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/temple_platform_dev}
+    username: ${SPRING_DATASOURCE_USERNAME:temple_app}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    com.temple.platform: DEBUG
+    org.springframework.jdbc: DEBUG
+
+management:
+  endpoint:
+    health:
+      show-details: always

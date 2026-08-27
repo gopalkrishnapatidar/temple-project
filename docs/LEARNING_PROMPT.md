@@ -1,58 +1,73 @@
 # Temple Digital Services Platform
 
-# Reusable Learning Review Prompt
+# Cursor Module Implementation Prompt
 
-This prompt applies to every project module.
+This file defines the standard implementation workflow for every project module.
 
-Read first:
+Detailed learning notes, tutorials, interview preparation, scenario-based questions,
+
+command explanations, API explanations, hands-on learning records, and troubleshooting
+
+learning material are maintained separately in the `temple-project-learning` repository.
+
+Cursor should focus its Agent usage on implementation, testing, debugging, and verification.
+
+---
+
+# REQUIRED CONTEXT
+
+Before starting a module, read:
 
 - /docs/AI_[CONTEXT.md](http://CONTEXT.md)
-
 - /docs/MODULE_[STATUS.md](http://STATUS.md)
 
-Use the current module recorded in MODULE_[STATUS.md](http://STATUS.md).
+Use `MODULE_STATUS.md` as the source of truth for:
 
-My objective is to LEARN and gain hands-on experience, not simply generate code.
+- completed modules
+- current module
+- current module status
+- project progress
+
+Use `AI_CONTEXT.md` for:
+
+- architecture
+- project conventions
+- security requirements
+- technical decisions
+- reliability requirements
+- important implementation context
+
+Inspect only repository files relevant to the approved module.
+
+Do not scan the entire repository unless necessary.
 
 ---
 
 # BEFORE IMPLEMENTATION
 
-Before changing anything:
+Before changing files:
 
-1. Explain what problem this module solves.
+1. Confirm the approved module.
+2. Read `AI_CONTEXT.md`.
+3. Read `MODULE_STATUS.md`.
+4. Inspect only relevant existing implementation files.
+5. Identify dependencies on completed modules.
+6. Provide a SHORT implementation plan.
+7. List expected files to create or modify.
 
-2. Explain why this module is required in our Temple Digital Services Platform.
+Do NOT provide a long conceptual explanation.
 
-3. Explain the architecture involved.
+Do NOT generate:
 
-4. Explain how the components communicate.
+- tutorials
+- detailed learning notes
+- interview questions
+- scenario-based learning questions
+- large command explanations
+- detailed API learning explanations
+- textbook-style explanations
 
-5. Explain important internal concepts.
-
-6. Explain how this technology is normally used in production.
-
-7. Explain security implications.
-
-8. Explain scalability implications.
-
-9. Explain high-availability implications where applicable.
-
-10. Explain cost implications where applicable.
-
-11. Explain common failure scenarios.
-
-12. Explain how those failures would be troubleshot.
-
-13. Give important interview concepts/questions for this module.
-
-14. Inspect only repository files relevant to the current module.
-
-15. Show a concise implementation plan.
-
-16. List the files expected to be created or modified.
-
-For significant changes, wait for my approval before implementation.
+These are maintained separately in `temple-project-learning`.
 
 ---
 
@@ -60,126 +75,252 @@ For significant changes, wait for my approval before implementation.
 
 Follow these rules:
 
-- Implement only the current module.
-
+- Implement only the approved module.
 - Do not implement future modules.
-
-- Follow /docs/AI_[CONTEXT.md](http://CONTEXT.md).
-
+- Preserve completed module functionality.
+- Follow existing architecture and conventions.
 - Reuse existing code where appropriate.
+- Avoid unnecessary refactoring.
+- Avoid unnecessary dependencies.
+- Avoid unnecessary repository scanning.
+- Do not regenerate unchanged files.
+- Keep implementation production-oriented but appropriately scoped.
+- Optimize Cursor Agent/token usage.
 
-- Do not unnecessarily refactor working code.
+Never hard-code:
 
-- Do not scan unrelated repository files.
+- passwords
+- database credentials
+- API keys
+- AWS credentials
+- tokens
+- private keys
+- certificates
+- production secrets
 
-- Optimize Cursor token usage.
-
-- Do not add unnecessary dependencies.
-
-- Never hard-code credentials.
-
-- Never expose secrets.
-
-- Prefer production-oriented solutions.
-
-- Keep the implementation understandable.
-
-- Explain important decisions.
-
-If an error occurs:
-
-Do NOT randomly change things.
-
-Follow:
-
-ERROR
-
-→ INVESTIGATE
-
-→ ROOT CAUSE
-
-→ FIX
-
-→ RETEST
+Use environment variables or appropriate secret-management patterns.
 
 ---
 
-# AFTER IMPLEMENTATION
+# TESTING
 
 After implementation:
 
-1. Explain what was implemented.
+1. Build or compile where applicable.
+2. Run relevant automated tests.
+3. Test important module behavior.
+4. Report the actual result.
+5. Fix implementation-related failures where appropriate.
+6. Re-run tests after fixes.
+7. Perform concise manual verification where required.
 
-2. Explain every important file created or modified.
+Never:
 
-3. Explain important commands used.
-
-4. Explain how I can manually verify the implementation.
-
-5. Explain how to run the tests.
-
-6. Give me 3-5 SAFE failure scenarios where applicable.
-
-7. Explain how to reproduce those failures.
-
-8. Explain how to troubleshoot them.
-
-9. Explain expected root causes.
-
-10. Explain security considerations.
-
-11. Explain scalability and availability considerations.
-
-12. Explain cost implications.
-
-13. Give interview questions based on the ACTUAL implementation.
-
-14. Give scenario-based interview questions.
-
-15. Tell me what I should be able to explain without AI before considering
-
-the module complete.
-
-16. Update /docs/MODULE_[STATUS.md](http://STATUS.md).
-
-17. Suggest a Git commit message.
-
-Then STOP.
-
-Do NOT automatically start the next module.
+- hide test failures
+- disable important tests just to obtain a passing build
+- suppress errors without understanding them
+- mark a module complete when important validation is still failing
 
 ---
 
-# LEARNING STANDARD
+# TROUBLESHOOTING
 
-For every important technology I should eventually be able to answer:
+When an implementation or test fails, follow:
 
-WHAT is it?
+ERROR
 
-WHY are we using it?
+-> IDENTIFY FAILING LAYER
 
-HOW does it work?
+-> COLLECT EVIDENCE
 
-HOW did we implement it?
+-> FIND ROOT CAUSE
 
-HOW do we test it?
+-> APPLY SMALLEST APPROPRIATE FIX
 
-HOW can it fail?
+-> RETEST
 
-HOW do we troubleshoot it?
+-> VERIFY
 
-HOW do we secure it?
+Do not randomly modify configuration.
 
-HOW do we scale it?
+Do not reinstall tools unless evidence shows the installation is missing or broken.
 
-HOW do we make it highly available?
+Do not perform destructive actions without developer approval.
 
-HOW do we monitor it?
+Troubleshooting remains an implementation responsibility in this repository.
 
-HOW much can it cost?
+However, detailed troubleshooting learning notes and scenario explanations belong in
 
-WHAT alternatives exist?
+the separate `temple-project-learning` repository.
 
-WHAT trade-offs did we make?
+---
 
-HOW would I explain our implementation in a DevOps/SRE interview?
+# DOCUMENTATION
+
+After completing the module, update:
+
+- /docs/MODULE_[STATUS.md](http://STATUS.md)
+
+Update:
+
+- /docs/AI_[CONTEXT.md](http://CONTEXT.md)
+
+only when the module changes:
+
+- architecture
+- important conventions
+- major implementation decisions
+- important operational context
+- security requirements
+- reliability requirements
+- project-wide technical context
+
+Documentation in this repository should remain concise and implementation-specific.
+
+Do NOT duplicate detailed educational material.
+
+Detailed learning notes, interview preparation, commands, API explanations,
+
+hands-on walkthroughs, and troubleshooting learning material are maintained in
+
+the separate `temple-project-learning` repository.
+
+---
+
+# REQUIRED COMPLETION RESPONSE
+
+After implementing and validating the approved module, return only the following sections.
+
+## 1. Files Created/Modified
+
+List the files changed.
+
+## 2. Implementation Summary
+
+Briefly describe what was implemented.
+
+## 3. Commands Executed
+
+List important commands actually executed.
+
+Examples may include:
+
+- build commands
+- test commands
+- run commands
+- database validation commands
+- API validation commands
+
+Do not provide long command tutorials.
+
+## 4. Test Results
+
+Clearly report:
+
+- build result
+- tests passed
+- tests failed
+- tests skipped where relevant
+
+## 5. Problems Encountered
+
+Briefly describe actual implementation problems and how they were resolved.
+
+If none occurred, state:
+
+`None.`
+
+Do not convert this section into detailed learning material.
+
+## 6. Manual Verification
+
+Provide the minimum commands or steps required for developer verification.
+
+Examples may include:
+
+- application startup command
+- API endpoint checks
+- health checks
+- database connectivity checks
+
+## 7. Module Status
+
+Use one of:
+
+- COMPLETE
+- TESTING
+- BLOCKED
+
+A module should be marked `COMPLETE` only when required implementation and validation succeed.
+
+## 8. Suggested Git Commit Message
+
+Provide one concise commit message.
+
+---
+
+# GIT SAFETY
+
+Do not automatically:
+
+- commit
+- push
+- merge
+- force-push
+- delete branches
+- rewrite history
+
+Wait for developer approval.
+
+---
+
+# INFRASTRUCTURE AND CLOUD SAFETY
+
+Never automatically run destructive or cost-impacting operations such as:
+
+- terraform apply
+- terraform destroy
+- destructive AWS commands
+- destructive Kubernetes operations
+- destructive database operations
+- production deployment commands
+
+unless explicitly approved by the developer.
+
+Prefer local and low-cost resources until a module specifically requires cloud infrastructure.
+
+---
+
+# MODULE WORKFLOW
+
+DESIGN
+
+-> IMPLEMENT
+
+-> TEST
+
+-> TROUBLESHOOT
+
+-> FIX
+
+-> VERIFY
+
+-> UPDATE PROJECT CONTEXT
+
+-> COMMIT
+
+Detailed learning and interview preparation are handled separately in
+
+`temple-project-learning`.
+
+---
+
+# STOP RULE
+
+After completing the approved module:
+
+STOP.
+
+Do not start the next module.
+
+Wait for developer approval.
