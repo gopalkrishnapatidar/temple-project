@@ -1,50 +1,276 @@
 ---
-description: Permanent rules for the Temple Digital Services Platform
+description: Permanent implementation rules for the Temple Digital Services Platform
 alwaysApply: true
 ---
 
-# Temple Digital Services Platform — Cursor Project Rule
+# Temple Digital Services Platform - Cursor Project Rule
 
-Before performing project work, always read:
+## Required Context
+
+Before performing project work, read only:
 
 - /docs/AI_CONTEXT.md
 - /docs/MODULE_STATUS.md
 
-For module learning and implementation also follow:
+Use these files to understand:
+- current architecture
+- completed modules
+- current approved module
+- project conventions
+- important technical decisions
+- security and reliability constraints
 
-- /docs/LEARNING_PROMPT.md
+Do NOT automatically read the entire repository.
 
-## Permanent Rules
+Inspect only files required for the current implementation task.
+
+---
+
+# Repository Responsibility
+
+This repository is the IMPLEMENTATION repository.
+
+Detailed learning material is maintained separately outside this repository.
+
+Therefore:
+
+- Focus Cursor/Agent usage on coding, configuration, testing, debugging and implementation.
+- Do NOT generate long tutorials or textbook-style explanations.
+- Do NOT generate large learning notes.
+- Do NOT generate interview preparation material.
+- Do NOT generate scenario-based learning Q&A unless explicitly requested.
+- Do NOT duplicate educational material already maintained separately.
+- Keep implementation documentation concise and project-specific.
+
+---
+
+# Module Execution Rules
 
 - Work only on the currently approved module.
 - Never automatically implement future modules.
-- Follow the architecture, security, testing, reliability and cost rules in AI_CONTEXT.md.
-- Use MODULE_STATUS.md as the source of truth for current project progress.
-- Explain the plan before significant implementation.
-- Inspect only files relevant to the current task.
-- Minimize unnecessary repository scanning and token usage.
+- Do not add technology belonging to a future module.
+- Preserve functionality from completed modules.
+- Follow existing architecture and project conventions.
+- Prefer the smallest clean implementation that satisfies the approved module.
+- Do not over-engineer.
+- Do not perform unrelated refactoring.
 - Do not regenerate unchanged files.
-- Do not perform unnecessary refactoring.
-- Never hard-code or expose passwords, API keys, AWS credentials, tokens, private keys or production secrets.
-- Prefer local and low-cost resources before paid cloud infrastructure.
-- Never automatically run terraform apply, terraform destroy or destructive cloud commands.
-- Test important changes.
-- Troubleshoot failures systematically instead of applying random fixes.
-- Consider security, scalability, availability, observability, reliability and cost where applicable.
-- Update /docs/MODULE_STATUS.md after each module.
-- Suggest a Git commit message after completing a module.
-- Never automatically start the next module.
-- Stop and wait for developer approval.
+- Do not scan unrelated directories unnecessarily.
+- Minimize unnecessary Agent/token usage.
 
-## Learning Workflow
+Before significant implementation:
 
-LEARN
-→ DESIGN
+1. Read AI_CONTEXT.md.
+2. Read MODULE_STATUS.md.
+3. Inspect only relevant existing files.
+4. Give a SHORT implementation plan.
+5. Implement the approved module.
+
+Do not provide a long conceptual lesson before implementation.
+
+---
+
+# Coding Rules
+
+- Write production-oriented, readable and maintainable code.
+- Follow established project naming and directory conventions.
+- Keep business domains separated appropriately.
+- Avoid unnecessary dependencies.
+- Avoid duplicate code where a simple reusable abstraction is appropriate.
+- Do not introduce complexity without a project requirement.
+- Preserve backward compatibility where applicable.
+
+---
+
+# Security Rules
+
+Never hard-code or expose:
+
+- passwords
+- database credentials
+- API keys
+- AWS credentials
+- tokens
+- certificates/private keys
+- production secrets
+
+Use environment variables, placeholders and appropriate secret-management patterns.
+
+Never commit real secrets.
+
+Follow least privilege wherever applicable.
+
+---
+
+# Testing Rules
+
+Important implementation changes must be tested.
+
+For each module:
+
+1. Build/compile where applicable.
+2. Run relevant automated tests.
+3. Test important module behavior.
+4. Report failures accurately.
+5. Troubleshoot failures systematically.
+6. Fix failures caused by the implementation when possible.
+7. Re-run tests after fixes.
+
+Do not report a module as complete when important tests are failing unless the failure is clearly documented and developer approval is required.
+
+---
+
+# Troubleshooting Rules
+
+When something fails:
+
+1. Read the actual error.
+2. Identify the failing layer.
+3. Collect relevant evidence.
+4. Form a likely hypothesis.
+5. Apply the smallest appropriate fix.
+6. Re-test.
+
+Do NOT:
+- randomly change configuration
+- reinstall tools without evidence
+- suppress errors just to make tests pass
+- disable important tests
+- hide failures
+- perform destructive actions without approval
+
+---
+
+# Infrastructure and Cloud Safety
+
+Prefer local and low-cost resources while learning and developing.
+
+Never automatically run:
+
+- terraform apply
+- terraform destroy
+- destructive AWS operations
+- destructive Kubernetes operations
+- database destructive operations
+
+without explicit developer approval.
+
+Consider, where relevant:
+
+- security
+- scalability
+- availability
+- reliability
+- observability
+- maintainability
+- performance
+- cost
+
+Do not add infrastructure merely to demonstrate a technology.
+
+---
+
+# Documentation Rules
+
+After completing a module, update:
+
+- /docs/MODULE_STATUS.md
+- /docs/AI_CONTEXT.md only when architecture, conventions, important implementation details or project context changed
+
+Documentation in this repository should describe:
+
+- what was implemented
+- important implementation decisions
+- configuration required to run it
+- important operational information
+- known limitations
+
+Keep it concise.
+
+Do NOT write detailed educational explanations here.
+
+Detailed learning notes, interview preparation, command explanations and scenario-based material are maintained in the separate learning repository.
+
+---
+
+# Module Completion Output
+
+After implementing and testing an approved module, provide only:
+
+## 1. Files Created/Modified
+
+List the files changed.
+
+## 2. Implementation Summary
+
+Briefly explain what was implemented.
+
+## 3. Commands Executed
+
+List important build/test/run commands actually executed.
+
+## 4. Test Results
+
+Clearly report:
+- passed tests
+- failed tests
+- build status
+
+## 5. Problems Encountered
+
+Briefly list actual implementation problems and how they were resolved.
+
+Do not turn this section into a tutorial.
+
+## 6. Manual Verification
+
+Provide only the commands/steps the developer needs to verify the implementation.
+
+## 7. Module Status
+
+State whether the module is:
+- COMPLETE
+- TESTING
+- BLOCKED
+
+## 8. Suggested Git Commit Message
+
+Provide one concise commit message.
+
+---
+
+# Git Rules
+
+- Do not automatically commit.
+- Do not automatically push.
+- Do not automatically merge.
+- Do not automatically delete branches.
+- Suggest the appropriate Git commands when required.
+- Wait for developer approval before destructive or history-changing Git operations.
+
+---
+
+# Permanent Workflow
+
+DESIGN
 → IMPLEMENT
 → TEST
-→ BREAK SAFELY
 → TROUBLESHOOT
 → FIX
-→ DOCUMENT
-→ EXPLAIN
+→ VERIFY
+→ UPDATE PROJECT CONTEXT
 → COMMIT
+
+Detailed learning and interview preparation are handled separately.
+
+---
+
+# Stop Rule
+
+After completing the approved module:
+
+STOP.
+
+Do not begin the next module.
+
+Wait for developer approval.
