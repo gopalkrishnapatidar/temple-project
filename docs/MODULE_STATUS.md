@@ -14,9 +14,9 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 4 / 44 |
+| Completed | 5 / 44 |
 | Current Phase | Phase 1 - Application |
-| Current Module | Module 04 - Next.js Frontend Foundation |
+| Current Module | Module 05 - PostgreSQL & Database Engineering |
 | Current Module Status | NOT STARTED |
 
 ### Completed Modules
@@ -25,6 +25,7 @@ Cursor must update this file after completing each module.
 - [x] Module 01 - Git, GitHub & Local Development
 - [x] Module 02 - Linux & Networking Foundation
 - [x] Module 03 - Spring Boot Backend Foundation
+- [x] Module 04 - Next.js Frontend Foundation
 
 ---
 
@@ -86,6 +87,50 @@ None.
 
 ---
 
+## Module 04 - Next.js Frontend Foundation
+
+**Status:** COMPLETED
+
+### Implementation
+
+- `frontend/` Next.js 15 (React 19, TypeScript, App Router)
+- Routes: `GET /` home page
+- Shared root layout with minimal header/footer structure
+- `lib/api.ts` and `lib/types.ts` for backend ping integration
+- Server Component `BackendStatus` with Suspense loading fallback
+- `frontend/.env.example` with `NEXT_PUBLIC_API_BASE_URL=http://localhost:8080`
+- Server-side fetch to `GET /api/v1/system/ping` (no direct PostgreSQL access)
+- Controlled loading, success, and error UI states
+- No UI framework, state management, auth, Docker, CI/CD, or AWS added
+- No backend CORS change required (browser requests are not used for ping)
+
+### Automated Validation
+
+`npm install`, `npm run lint`, `npm run build`
+
+| Metric | Result |
+|--------|--------|
+| ESLint | PASS — no warnings or errors |
+| Production build | SUCCESS |
+| Type check (build) | PASS |
+
+### Manual Runtime Validation
+
+| Check | Result |
+|-------|--------|
+| `npm run dev` | SUCCESS — served on `http://localhost:3000` |
+| Home page title/content | SUCCESS |
+| Backend status section (backend stopped) | SUCCESS — controlled unavailable message shown |
+| `GET http://localhost:8080/api/v1/system/ping` | NOT TESTED — backend not running in agent environment |
+| Backend status success state | NOT TESTED — requires running Spring Boot backend |
+
+### Problems Encountered
+
+- Node.js/npm were not initially available in the agent shell PATH; Node.js LTS was installed via `winget` to run frontend validation.
+- Backend integration success state could not be verified because the Spring Boot backend was not running and database credentials were not configured in the agent environment.
+
+---
+
 ## Implementation Artifacts by Module
 
 ### Module 00
@@ -115,6 +160,12 @@ None.
 - No Docker, Kubernetes, Helm, Terraform, AWS, CI/CD, Redis, Kafka, frontend,
   auth, or business domain logic
 
+### Module 04
+
+- `frontend/` Next.js frontend foundation
+- No UI framework, Redux/Zustand, auth, Docker, Kubernetes, CI/CD, AWS, Redis,
+  Kafka, or business domain features
+
 ---
 
 ## Architecture Decisions
@@ -131,7 +182,7 @@ None.
 
 ## Next Module
 
-**Module 04 - Next.js Frontend Foundation**
+**Module 05 - PostgreSQL & Database Engineering**
 
 Status: NOT STARTED
 
@@ -148,7 +199,7 @@ Status: NOT STARTED
 ## Phase 1 - Application
 
 - [x] Module 03 - Spring Boot Backend Foundation
-- [ ] Module 04 - Next.js Frontend Foundation
+- [x] Module 04 - Next.js Frontend Foundation
 - [ ] Module 05 - PostgreSQL & Database Engineering
 - [ ] Module 06 - Authentication & Authorization
 - [ ] Module 07 - Temple & Event Management
