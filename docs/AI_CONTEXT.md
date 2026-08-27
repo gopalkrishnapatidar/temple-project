@@ -65,6 +65,25 @@ They must be introduced according to the module roadmap.
 
 ---
 
+# 3a. Application Stack (Current)
+
+## Backend
+
+- `backend/` — Spring Boot 3.4 (Java 21, Maven)
+- REST API base path: `/api/v1`
+- Local default: `http://localhost:8080`
+- PostgreSQL via Flyway migrations (backend only; frontend never connects to DB)
+
+## Frontend
+
+- `frontend/` — Next.js 15 (React 19, TypeScript, App Router)
+- Local default: `http://localhost:3000`
+- Backend API URL via `NEXT_PUBLIC_API_BASE_URL` (browser-visible; no secrets)
+- Server Components by default; Client Components only when interactivity requires it
+- Backend integration uses server-side fetch for foundation endpoints (no CORS required for current ping check)
+
+---
+
 # 3. Technology Scope
 
 The 44-module roadmap progressively introduces:
