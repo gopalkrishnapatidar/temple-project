@@ -4,6 +4,16 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
+  datasource:
+    hikari:
+      pool-name: temple-hikari
+      maximum-pool-size: ${HIKARI_MAXIMUM_POOL_SIZE:10}
+      minimum-idle: ${HIKARI_MINIMUM_IDLE:2}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT_MS:30000}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT_MS:600000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME_MS:1800000}
+      validation-timeout: ${HIKARI_VALIDATION_TIMEOUT_MS:5000}
+
 server:
   port: 8080
   address: 0.0.0.0
