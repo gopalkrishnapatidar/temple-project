@@ -20,6 +20,10 @@ server:
 
 app:
   version: 0.0.1-SNAPSHOT
+  jwt:
+    secret: ${JWT_SECRET:}
+    issuer: ${JWT_ISSUER:temple-platform}
+    access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
 
 management:
   endpoints:
