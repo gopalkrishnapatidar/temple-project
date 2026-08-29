@@ -21,7 +21,7 @@ Frontend never connects to PostgreSQL.
 - Schema changes go through Flyway only (`backend/src/main/resources/db/migration/`).
 - Use `TIMESTAMPTZ`, explicit constraints, and least-privilege roles.
 - Do not store secrets in Git. Passwords come from the environment.
-- Domain tables for auth, temples, slots, and bookings belong to later modules.
+- Identity table `account` is introduced in Module 06. Temple, slot, and booking tables belong to later modules.
 
 ## Local database
 
@@ -64,12 +64,14 @@ Defaults are sized for a single local backend process. Replica count × `HIKARI_
 |-----------|---------|
 | `V1__baseline.sql` | `application_metadata` |
 | `V2__database_engineering.sql` | `updated_at` trigger, CHECK constraints, schema version `2` |
+| `V3__fix_application_metadata_updated_at_timestamp.sql` | `clock_timestamp()` for `updated_at` |
+| `V4__account.sql` | `account` table (auth) |
 
 Optional separate migrator credentials: `SPRING_FLYWAY_USERNAME` and `SPRING_FLYWAY_PASSWORD`. If unset, Flyway uses the datasource user.
 
 ## API
 
-`GET /api/v1/system/database` returns `schemaVersion` (from `application_metadata`) and `flywayVersion` (latest successful Flyway version). No connection strings or passwords.
+`GET /api/v1/system/database` returns `schemaVersion` (from `application_metadata`) and `flywayVersion` (latest successful Flyway version). No connection strings or passwords. From Module 06 this endpoint requires `PLATFORM_ADMIN`.
 
 ## Verification
 

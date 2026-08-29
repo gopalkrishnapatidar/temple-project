@@ -76,8 +76,13 @@ They must be introduced according to the module roadmap.
 - HikariCP pool settings are explicit and environment-overridable
 - Local development uses `temple_app` for datasource and Flyway unless a deliberate migration-role transition is performed
 - Optional separate Flyway/DDL role (`temple_migrator`) bootstrap is reference-only in `backend/db/`
-- Flyway migrations through V3 on `application_metadata` (V3 fixes `updated_at` trigger: `NOW()` → `clock_timestamp()`)
-- `GET /api/v1/system/database` reports schema/Flyway versions (no secrets)
+- Flyway migrations through V4 (`application_metadata` plus `account`)
+- V3 fixes `updated_at` trigger: `NOW()` → `clock_timestamp()`
+- Identity (Module 06): BCrypt passwords; JWT HS256 access tokens (15-minute lifetime, `JWT_SECRET` required); roles `DEVOTEE` / `TEMPLE_ADMIN` / `PLATFORM_ADMIN`
+- Public registration always creates `DEVOTEE` + `ACTIVE`; duplicate email → 409; public registration cannot self-assign admin role
+- `GET /api/v1/auth/me` protected; missing/invalid authentication → 401; insufficient role → 403
+- `GET /api/v1/system/database` reports schema/Flyway versions (no secrets); requires `PLATFORM_ADMIN`
+- Health/liveness/readiness endpoints remain public
 
 ## Frontend
 

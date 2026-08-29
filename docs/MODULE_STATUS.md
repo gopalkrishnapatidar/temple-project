@@ -14,9 +14,9 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 6 / 44 |
+| Completed | 7 / 44 |
 | Current Phase | Phase 1 - Application |
-| Current Module | Module 06 - Authentication & Authorization |
+| Current Module | Module 07 - Temple & Event Management |
 | Current Module Status | NOT STARTED |
 
 ### Completed Modules
@@ -27,6 +27,7 @@ Cursor must update this file after completing each module.
 - [x] Module 03 - Spring Boot Backend Foundation
 - [x] Module 04 - Next.js Frontend Foundation
 - [x] Module 05 - PostgreSQL & Database Engineering
+- [x] Module 06 - Authentication & Authorization
 
 ---
 
@@ -198,6 +199,62 @@ None.
 
 ---
 
+## Module 06 - Authentication & Authorization
+
+**Status:** COMPLETED
+
+### Implementation
+
+- Flyway `V4__account.sql` — `account` table with unique normalized email and role/status CHECKs
+- Spring Security filter chain (stateless JWT, default deny)
+- `POST /api/v1/auth/register` — public; always creates `DEVOTEE` + `ACTIVE`; duplicate email → 409; client cannot self-assign admin role
+- `POST /api/v1/auth/login` — public; BCrypt authentication; generic invalid-credentials response
+- `GET /api/v1/auth/me` — protected; identity from JWT `sub` / SecurityContext only
+- JWT HS256 access tokens (`JWT_SECRET` required, no insecure production default); 15-minute lifetime
+- Missing/invalid/expired/tampered token → 401; insufficient role → 403
+- `GET /api/v1/system/database` and `/actuator/info` require `PLATFORM_ADMIN`
+- Public: register, login, ping, info, health/liveness/readiness
+- Authorization probes: `/api/v1/internal/temple-admin`, `/api/v1/internal/platform-admin`
+- `docs/security/AUTHENTICATION.md`
+
+### Database
+
+- Flyway V4 applied; `schema_version` = `4`
+- `account` roles: `DEVOTEE`, `TEMPLE_ADMIN`, `PLATFORM_ADMIN`; statuses: `ACTIVE`, `DISABLED`
+
+### Automated Validation
+
+`mvn clean test`
+
+| Metric | Result |
+|--------|--------|
+| Tests run | 32 |
+| Failures | 0 |
+| Errors | 0 |
+| Skipped | 0 |
+| Build | SUCCESS |
+
+### Manual Runtime Validation
+
+| Check | Result |
+|-------|--------|
+| Registration → `DEVOTEE` / `ACTIVE` | SUCCESS |
+| Duplicate registration | SUCCESS — 409 |
+| Self-assigned `PLATFORM_ADMIN` in JSON | SUCCESS — still `DEVOTEE` |
+| Valid login → JWT (900s expiry) | SUCCESS |
+| `GET /api/v1/auth/me` with valid token | SUCCESS |
+| Missing JWT | SUCCESS — 401 JSON |
+| `DEVOTEE` → `GET /api/v1/system/database` | SUCCESS — 403 JSON |
+| `GET /actuator/health` (no auth) | SUCCESS — UP |
+| Wrong password / unknown user login | SUCCESS — 401 |
+
+### Problems Encountered
+
+- Stale `target/test-classes/application.yml` from a deleted test resource shadowed main `application.yml`; `mvn clean test` resolved it.
+- Runtime startup failure was caused by an incorrect local `SPRING_DATASOURCE_PASSWORD`, not application code.
+
+---
+
 ## Implementation Artifacts by Module
 
 ### Module 00
@@ -238,6 +295,11 @@ None.
 - Database engineering: HikariCP, Flyway V1–V3, optional migrator role (reference-only), JDBC metadata API
 - No auth, temple/event APIs, booking, Redis, Kafka, Docker, Kubernetes, CI/CD, or AWS
 
+### Module 06
+
+- Authentication and authorization: `account` table, Spring Security, JWT access tokens
+- No Temple/Event APIs, booking, Redis, Kafka, Docker, Kubernetes, CI/CD, or AWS
+
 ---
 
 ## Architecture Decisions
@@ -249,12 +311,13 @@ None.
   observability to their modules.
 - Do not decide the booking reservation/hold/confirmation vs payment ordering
   in Module 00.
+- Module 06: short-lived JWT access tokens (no refresh tokens); `GET /api/v1/system/database` is `PLATFORM_ADMIN`-only.
 
 ---
 
 ## Next Module
 
-**Module 06 - Authentication & Authorization**
+**Module 07 - Temple & Event Management**
 
 Status: NOT STARTED
 
@@ -273,7 +336,7 @@ Status: NOT STARTED
 - [x] Module 03 - Spring Boot Backend Foundation
 - [x] Module 04 - Next.js Frontend Foundation
 - [x] Module 05 - PostgreSQL & Database Engineering
-- [ ] Module 06 - Authentication & Authorization
+- [x] Module 06 - Authentication & Authorization
 - [ ] Module 07 - Temple & Event Management
 - [ ] Module 08 - Darshan & Slot Management
 - [ ] Module 09 - Havan & Puja Booking
