@@ -3,8 +3,13 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/temple_platform_dev}
     username: ${SPRING_DATASOURCE_USERNAME:temple_app}
     password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION_THRESHOLD_MS:20000}
   flyway:
     enabled: true
+    validate-on-migrate: true
+    user: ${SPRING_FLYWAY_USERNAME:${SPRING_DATASOURCE_USERNAME:temple_app}}
+    password: ${SPRING_FLYWAY_PASSWORD:${SPRING_DATASOURCE_PASSWORD}}
 
 logging:
   level:

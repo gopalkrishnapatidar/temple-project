@@ -32,6 +32,9 @@ Base package: `com.temple.platform`
 | `SPRING_DATASOURCE_URL` | JDBC URL | `jdbc:postgresql://localhost:5432/temple_platform_dev` |
 | `SPRING_DATASOURCE_USERNAME` | Database user | `temple_app` |
 | `SPRING_DATASOURCE_PASSWORD` | Database password | **required** — no default in Git |
+| `SPRING_FLYWAY_USERNAME` | Optional Flyway/DDL user | Datasource username |
+| `SPRING_FLYWAY_PASSWORD` | Optional Flyway password | Datasource password |
+| `HIKARI_MAXIMUM_POOL_SIZE` | Hikari max pool size | `10` |
 
 Copy `backend/.env.example` to `backend/.env` (or set variables in your shell). Never commit real passwords.
 
@@ -92,6 +95,9 @@ Only `health` and `info` actuator endpoints are exposed.
 |----------|----------|
 | `GET /api/v1/system/ping` | `{"status":"UP","message":"Temple Platform API is running"}` |
 | `GET /api/v1/system/info` | Application name, version, active profiles (no secrets) |
+| `GET /api/v1/system/database` | Schema version from `application_metadata` and latest Flyway version (no secrets) |
+
+Database engineering details: `/docs/database/DATABASE_ENGINEERING.md`.
 
 ## Common Startup Troubleshooting
 

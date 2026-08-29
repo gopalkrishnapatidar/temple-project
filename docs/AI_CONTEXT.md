@@ -73,6 +73,11 @@ They must be introduced according to the module roadmap.
 - REST API base path: `/api/v1`
 - Local default: `http://localhost:8080`
 - PostgreSQL via Flyway migrations (backend only; frontend never connects to DB)
+- HikariCP pool settings are explicit and environment-overridable
+- Local development uses `temple_app` for datasource and Flyway unless a deliberate migration-role transition is performed
+- Optional separate Flyway/DDL role (`temple_migrator`) bootstrap is reference-only in `backend/db/`
+- Flyway migrations through V3 on `application_metadata` (V3 fixes `updated_at` trigger: `NOW()` → `clock_timestamp()`)
+- `GET /api/v1/system/database` reports schema/Flyway versions (no secrets)
 
 ## Frontend
 
@@ -365,6 +370,18 @@ PostgreSQL is the authoritative source of truth for transactional data.
 
 Use Flyway for database migrations.
 
+Connection pooling is HikariCP. Size `HIKARI_MAXIMUM_POOL_SIZE` so that
+(application instances × pool size) stays below PostgreSQL `max_connections`.
+
+Local bootstrap scripts live in `backend/db/`. The hardened two-role script
+(`02_roles_and_grants.sql`) is reference-only; local development continues with
+`temple_app` for datasource and Flyway unless a deliberate migration-role
+transition is planned and ownership/privileges are established first.
+
+Applied Flyway migrations are immutable; use forward migrations (for example V3)
+to correct trigger behavior. PostgreSQL `NOW()` is transaction-stable; use
+`clock_timestamp()` when `updated_at` must reflect the actual UPDATE time.
+
 Use appropriate:
 
 - primary keys
@@ -372,6 +389,8 @@ Use appropriate:
 - constraints
 - indexes
 - transactions
+- `TIMESTAMPTZ` for timestamps
+- least-privilege database roles
 
 Redis must NOT become the authoritative source for booking capacity.
 Kafka must NOT become the authoritative source for transactional booking state.

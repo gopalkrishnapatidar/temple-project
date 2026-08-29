@@ -14,9 +14,9 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 5 / 44 |
+| Completed | 6 / 44 |
 | Current Phase | Phase 1 - Application |
-| Current Module | Module 05 - PostgreSQL & Database Engineering |
+| Current Module | Module 06 - Authentication & Authorization |
 | Current Module Status | NOT STARTED |
 
 ### Completed Modules
@@ -26,6 +26,7 @@ Cursor must update this file after completing each module.
 - [x] Module 02 - Linux & Networking Foundation
 - [x] Module 03 - Spring Boot Backend Foundation
 - [x] Module 04 - Next.js Frontend Foundation
+- [x] Module 05 - PostgreSQL & Database Engineering
 
 ---
 
@@ -131,6 +132,72 @@ None.
 
 ---
 
+## Module 05 - PostgreSQL & Database Engineering
+
+**Status:** COMPLETED
+
+### Implementation
+
+- Explicit HikariCP pool settings (env-overridable); leak detection on in `dev`, off in `prod`
+- Optional Flyway credentials (`SPRING_FLYWAY_USERNAME` / `SPRING_FLYWAY_PASSWORD`)
+- Flyway `V2__database_engineering.sql` — `updated_at` trigger, CHECK constraints
+- Flyway `V3__fix_application_metadata_updated_at_timestamp.sql` — `clock_timestamp()` trigger fix
+- JDBC `ApplicationMetadataRepository` and `GET /api/v1/system/database`
+- Local bootstrap SQL: `backend/db/01_create_database.sql`, `backend/db/02_roles_and_grants.sql` (reference-only)
+- `docs/database/DATABASE_ENGINEERING.md`
+- No domain tables (auth, temple, booking), JPA, Redis, Docker, or Testcontainers
+
+### Database
+
+- PostgreSQL database: `temple_platform_dev`
+- Application database user: `temple_app` (datasource and Flyway for local development)
+- Flyway V1, V2, and V3 applied successfully; `schema_version` = `3`
+- V3 required because PostgreSQL `NOW()` is transaction-stable; forward migration uses `clock_timestamp()`
+- Optional `temple_migrator` role bootstrap remains reference-only and was not executed
+- PostgreSQL 18.6 produced a non-blocking Flyway tested-support warning (official support through PostgreSQL 17)
+
+### Automated Validation
+
+`mvn test`
+
+| Metric | Result |
+|--------|--------|
+| Tests run | 8 |
+| Failures | 0 |
+| Errors | 0 |
+| Skipped | 0 |
+| Build | SUCCESS |
+
+### Manual Runtime Validation
+
+| Check | Result |
+|-------|--------|
+| PostgreSQL connectivity | SUCCESS |
+| HikariCP startup | SUCCESS |
+| Application startup | SUCCESS |
+| `GET /api/v1/system/ping` | SUCCESS |
+| `GET /api/v1/system/info` | SUCCESS |
+| `GET /api/v1/system/database` | SUCCESS — `schemaVersion` `3`, `flywayVersion` `3` |
+| `GET /actuator/health` | UP |
+
+### Direct PostgreSQL Validation (`psql`)
+
+| Check | Result |
+|-------|--------|
+| Database `temple_platform_dev` | CONFIRMED |
+| User `temple_app` | CONFIRMED |
+| Schema `public` | CONFIRMED |
+| Flyway V1/V2/V3 success | CONFIRMED |
+| `schema_version` = `3` | CONFIRMED |
+| PK, UNIQUE, CHECK constraints and `updated_at` trigger | CONFIRMED |
+
+### Problems Encountered
+
+- V2 `updated_at` trigger used `NOW()` (transaction-stable); fixed in V3 with `clock_timestamp()` without modifying applied migrations.
+- Agent environment initially lacked `SPRING_DATASOURCE_PASSWORD`; resolved during local developer verification.
+
+---
+
 ## Implementation Artifacts by Module
 
 ### Module 00
@@ -166,6 +233,11 @@ None.
 - No UI framework, Redux/Zustand, auth, Docker, Kubernetes, CI/CD, AWS, Redis,
   Kafka, or business domain features
 
+### Module 05
+
+- Database engineering: HikariCP, Flyway V1–V3, optional migrator role (reference-only), JDBC metadata API
+- No auth, temple/event APIs, booking, Redis, Kafka, Docker, Kubernetes, CI/CD, or AWS
+
 ---
 
 ## Architecture Decisions
@@ -182,7 +254,7 @@ None.
 
 ## Next Module
 
-**Module 05 - PostgreSQL & Database Engineering**
+**Module 06 - Authentication & Authorization**
 
 Status: NOT STARTED
 
@@ -200,7 +272,7 @@ Status: NOT STARTED
 
 - [x] Module 03 - Spring Boot Backend Foundation
 - [x] Module 04 - Next.js Frontend Foundation
-- [ ] Module 05 - PostgreSQL & Database Engineering
+- [x] Module 05 - PostgreSQL & Database Engineering
 - [ ] Module 06 - Authentication & Authorization
 - [ ] Module 07 - Temple & Event Management
 - [ ] Module 08 - Darshan & Slot Management
