@@ -5,6 +5,13 @@ import com.temple.platform.darshan.exception.InvalidSlotScheduleException;
 import com.temple.platform.darshan.exception.InvalidSlotStatusTransitionException;
 import com.temple.platform.darshan.exception.OverlappingSlotException;
 import com.temple.platform.identity.exception.DuplicateEmailException;
+import com.temple.platform.ritual.exception.AmbiguousSlotQueryException;
+import com.temple.platform.ritual.exception.InvalidRitualCurrencyException;
+import com.temple.platform.ritual.exception.InvalidRitualDurationException;
+import com.temple.platform.ritual.exception.InvalidRitualNameException;
+import com.temple.platform.ritual.exception.InvalidRitualPriceException;
+import com.temple.platform.ritual.exception.InvalidRitualSlotScheduleException;
+import com.temple.platform.ritual.exception.InvalidRitualSlotStatusTransitionException;
 import com.temple.platform.temple.exception.DuplicateAssignmentException;
 import com.temple.platform.temple.exception.ForbiddenOperationException;
 import com.temple.platform.temple.exception.InvalidEventScheduleException;
@@ -19,6 +26,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
@@ -47,7 +55,11 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, message, request.getRequestURI());
     }
 
-    @ExceptionHandler({HttpMessageNotReadableException.class, IllegalArgumentException.class})
+    @ExceptionHandler({
+            HttpMessageNotReadableException.class,
+            IllegalArgumentException.class,
+            MethodArgumentTypeMismatchException.class
+    })
     public ResponseEntity<ErrorResponse> handleBadRequest(
             Exception ex,
             HttpServletRequest request) {
@@ -115,6 +127,21 @@ public class GlobalExceptionHandler {
             OverlappingSlotException ex,
             HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler({
+            InvalidRitualNameException.class,
+            InvalidRitualDurationException.class,
+            InvalidRitualPriceException.class,
+            InvalidRitualCurrencyException.class,
+            InvalidRitualSlotScheduleException.class,
+            InvalidRitualSlotStatusTransitionException.class,
+            AmbiguousSlotQueryException.class
+    })
+    public ResponseEntity<ErrorResponse> handleInvalidRitual(
+            RuntimeException ex,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(DuplicateEmailException.class)

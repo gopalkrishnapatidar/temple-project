@@ -76,11 +76,12 @@ They must be introduced according to the module roadmap.
 - HikariCP pool settings are explicit and environment-overridable
 - Local development uses `temple_app` for datasource and Flyway unless a deliberate migration-role transition is performed
 - Optional separate Flyway/DDL role (`temple_migrator`) bootstrap is reference-only in `backend/db/`
-- Flyway migrations through V6 (`darshan`, `darshan_slot`, overlap constraint)
+- Flyway migrations through V7 (`ritual`, `ritual_slot`); V6 remains `darshan` / `darshan_slot` with overlap EXCLUDE
 - V3 fixes `updated_at` trigger: `NOW()` → `clock_timestamp()`
 - Identity (Module 06): BCrypt passwords; JWT HS256 access tokens (15-minute lifetime, `JWT_SECRET` required); roles `DEVOTEE` / `TEMPLE_ADMIN` / `PLATFORM_ADMIN`
 - Temple/Event (Module 07): temples, admin assignments, events; DB-backed resource-level authorization (not JWT); public reads show `ACTIVE` temples and `PUBLISHED` events only; event create status server-owned (`DRAFT`); lifecycle transitions enforced on update (`DRAFT`→`PUBLISHED`/`CANCELLED`, `PUBLISHED`→`CANCELLED`; invalid transitions → 400)
 - Darshan/Slot (Module 08): nested `/api/v1/temples/{templeId}/darshans` and `.../slots`; `ACTIVE`/`INACTIVE` darshan; `AVAILABLE`/`CANCELLED` slots (status server-owned on create); PostgreSQL GiST EXCLUDE overlap on `[start_at,end_at)` for `AVAILABLE` slots per darshan; devotee reads require `ACTIVE` temple+darshan and `end_at > now()`; temple IANA timezone `date` queries; overlap races resolved by DB constraint (HTTP 409)
+- Ritual/Slot (Module 09, COMPLETED): Temple → Ritual (PUJA/HAVAN) → RitualSlot; `ACTIVE`/`INACTIVE` ritual; `AVAILABLE`/`CANCELLED` slots (create status server-owned); `NUMERIC`/`BigDecimal` INR only (zero allowed; negative rejected); domain/API `Instant`, PostgreSQL `TIMESTAMPTZ`, JDBC `OffsetDateTime` ↔ `Instant`; `durationMinutes` is current configuration and does not rewrite existing slots; overlapping Ritual slots allowed (no GiST EXCLUDE); `PLATFORM_ADMIN` global management; `TEMPLE_ADMIN` DB-scoped assignments; `DEVOTEE` hierarchical read (`ACTIVE` temple+ritual, non-cancelled `end_at > now()`); temple IANA `date` queries; `date` with `from`/`to` → 400; no booking, capacity, payment, Redis, or Kafka
 - Public registration always creates `DEVOTEE` + `ACTIVE`; duplicate email → 409
 - `GET /api/v1/auth/me` protected; missing/invalid authentication → 401; insufficient role → 403
 - `GET /api/v1/system/database` requires `PLATFORM_ADMIN`; health/liveness/readiness remain public

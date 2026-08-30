@@ -36,4 +36,15 @@ class SlotQuerySupportTest {
         assertThatThrownBy(() -> SlotQuerySupport.resolveInstantRange(from, to))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void localDateRangeIsDstSafeForAmericaNewYorkSpringForward() {
+        SlotQuerySupport.InstantRange range = SlotQuerySupport.resolveLocalDateRange(
+                LocalDate.of(2026, 3, 8),
+                "America/New_York"
+        );
+
+        assertThat(range.startInclusive()).isEqualTo(OffsetDateTime.of(2026, 3, 8, 5, 0, 0, 0, ZoneOffset.UTC));
+        assertThat(range.endExclusive()).isEqualTo(OffsetDateTime.of(2026, 3, 9, 4, 0, 0, 0, ZoneOffset.UTC));
+    }
 }
