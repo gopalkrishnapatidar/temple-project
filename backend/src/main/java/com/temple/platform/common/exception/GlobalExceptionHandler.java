@@ -1,5 +1,9 @@
 package com.temple.platform.common.exception;
 
+import com.temple.platform.darshan.exception.InvalidSlotCapacityException;
+import com.temple.platform.darshan.exception.InvalidSlotScheduleException;
+import com.temple.platform.darshan.exception.InvalidSlotStatusTransitionException;
+import com.temple.platform.darshan.exception.OverlappingSlotException;
 import com.temple.platform.identity.exception.DuplicateEmailException;
 import com.temple.platform.temple.exception.DuplicateAssignmentException;
 import com.temple.platform.temple.exception.ForbiddenOperationException;
@@ -83,6 +87,34 @@ public class GlobalExceptionHandler {
             ForbiddenOperationException ex,
             HttpServletRequest request) {
         return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidSlotScheduleException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidSlotSchedule(
+            InvalidSlotScheduleException ex,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidSlotCapacityException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidSlotCapacity(
+            InvalidSlotCapacityException ex,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidSlotStatusTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidSlotStatusTransition(
+            InvalidSlotStatusTransitionException ex,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(OverlappingSlotException.class)
+    public ResponseEntity<ErrorResponse> handleOverlappingSlot(
+            OverlappingSlotException ex,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(DuplicateEmailException.class)

@@ -14,9 +14,9 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 8 / 44 |
+| Completed | 9 / 44 |
 | Current Phase | Phase 1 - Application |
-| Current Module | Module 08 - Darshan & Slot Management |
+| Current Module | Module 09 - Havan & Puja Booking |
 | Current Module Status | NOT STARTED |
 
 ### Completed Modules
@@ -29,6 +29,7 @@ Cursor must update this file after completing each module.
 - [x] Module 05 - PostgreSQL & Database Engineering
 - [x] Module 06 - Authentication & Authorization
 - [x] Module 07 - Temple & Event Management
+- [x] Module 08 - Darshan & Slot Management
 
 ---
 
@@ -306,6 +307,68 @@ None.
 
 ---
 
+## Module 08 - Darshan & Slot Management
+
+**Status:** COMPLETED
+
+### Implementation
+
+- Flyway `V6__darshan_and_slot.sql` — `darshan`, `darshan_slot`, overlap EXCLUDE constraint (`btree_gist`)
+- Darshan CRUD nested under temples; slot CRUD nested under darshans
+- Darshan lifecycle: `ACTIVE` / `INACTIVE`; slot lifecycle: `AVAILABLE` / `CANCELLED` (create defaults server-owned)
+- Reuses `TempleAuthorizationService` and DB-backed temple assignment checks; nested Temple → Darshan → Slot BOLA protection
+- Devotee visibility: `ACTIVE` temple + `ACTIVE` darshan; non-cancelled slots with `end_at > now()`
+- Slot listing: temple-timezone `date` filter, optional `from`/`to` instant range (max 90 days), pagination
+- No booking, Redis, Kafka, payments, notifications, or real-time capacity engine
+
+### Database
+
+- Flyway V6 applied; `schema_version` = `6`
+- FK `darshan.temple_id` → `temple`, `darshan_slot.darshan_id` → `darshan`
+- CHECK: `capacity > 0`, `end_at > start_at`, status enums
+- GiST EXCLUDE on `tstzrange(start_at, end_at, '[)')` for `AVAILABLE` slots per `darshan_id` (adjacent allowed; `CANCELLED` excluded from overlap set)
+- Reuses `set_updated_at()` trigger (`clock_timestamp()`)
+
+### Automated Validation
+
+`mvn clean test`
+
+| Metric | Result |
+|--------|--------|
+| Tests run | 91 |
+| Failures | 0 |
+| Errors | 0 |
+| Skipped | 0 |
+| Build | SUCCESS |
+
+### Manual Runtime Validation
+
+| Check | Result |
+|-------|--------|
+| `GET /actuator/health` | UP — PostgreSQL UP |
+| `PLATFORM_ADMIN` creates `ACTIVE` darshan | SUCCESS |
+| `AVAILABLE` slot creation | SUCCESS |
+| Adjacent slots | SUCCESS |
+| Overlapping slot | SUCCESS — HTTP 409, business error (no raw DB leak) |
+| Temple-timezone `date` slot query | SUCCESS |
+| `DEVOTEE` read | SUCCESS |
+| `DEVOTEE` slot create | SUCCESS — HTTP 403 |
+| Cross-temple darshan BOLA | SUCCESS — HTTP 404 |
+| Cross-darshan slot BOLA | SUCCESS — HTTP 404 |
+| Slot cancellation | SUCCESS |
+| `PLATFORM_ADMIN` sees `CANCELLED` history | SUCCESS |
+| `DEVOTEE` does not see `CANCELLED` slot | SUCCESS |
+| `capacity=0` | SUCCESS — HTTP 400 |
+| `endAt <= startAt` | SUCCESS — HTTP 400 |
+| Expired JWT | SUCCESS — HTTP 401; re-login restored access |
+
+### Problems Encountered
+
+- Stale `AuthApiTest` expected `schemaVersion`/`flywayVersion` `5` after V6; updated to `6`.
+- Agent environment initially lacked `SPRING_DATASOURCE_PASSWORD` / `JWT_SECRET` for integration tests (local configuration, not code).
+
+---
+
 ## Implementation Artifacts by Module
 
 ### Module 00
@@ -351,10 +414,10 @@ None.
 - Authentication and authorization: `account` table, Spring Security, JWT access tokens
 - No Temple/Event APIs, booking, Redis, Kafka, Docker, Kubernetes, CI/CD, or AWS
 
-### Module 07
+### Module 08
 
-- Temple and event domain: Flyway V5, JDBC repositories, REST API, resource-level authorization
-- No Darshan, booking, Redis, Kafka, Docker, Kubernetes, CI/CD, or AWS
+- Darshan and slot domain: Flyway V6, JDBC repositories, nested REST API, overlap constraint
+- No booking, Redis, Kafka, payments, notifications, Docker, Kubernetes, CI/CD, or AWS
 
 ---
 
@@ -369,12 +432,15 @@ None.
   in Module 00.
 - Module 06: short-lived JWT access tokens (no refresh tokens); `GET /api/v1/system/database` is `PLATFORM_ADMIN`-only.
 - Module 07: temple admin assignments stored relationally; resource-level authorization enforced per temple; event create status server-owned (`DRAFT`); lifecycle transitions validated on update.
+- Module 08: darshan/slot nested under temples; PostgreSQL EXCLUDE overlap for available slots; devotee visibility filters; temple-timezone date queries.
 
 ---
 
 ## Next Module
 
-**Module 08 - Darshan & Slot Management** (not started; do not implement until approved)
+**Module 09 - Havan & Puja Booking**
+
+Status: NOT STARTED
 
 ---
 
@@ -393,7 +459,7 @@ None.
 - [x] Module 05 - PostgreSQL & Database Engineering
 - [x] Module 06 - Authentication & Authorization
 - [x] Module 07 - Temple & Event Management
-- [ ] Module 08 - Darshan & Slot Management
+- [x] Module 08 - Darshan & Slot Management
 - [ ] Module 09 - Havan & Puja Booking
 - [ ] Module 10 - Darshan Booking & Concurrency
 - [ ] Module 11 - Redis & Caching
