@@ -1,6 +1,11 @@
 package com.temple.platform.common.exception;
 
 import com.temple.platform.identity.exception.DuplicateEmailException;
+import com.temple.platform.temple.exception.DuplicateAssignmentException;
+import com.temple.platform.temple.exception.ForbiddenOperationException;
+import com.temple.platform.temple.exception.InvalidEventScheduleException;
+import com.temple.platform.temple.exception.InvalidEventStatusTransitionException;
+import com.temple.platform.temple.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +48,41 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST, "Invalid request", request.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidEventScheduleException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidEventSchedule(
+            InvalidEventScheduleException ex,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidEventStatusTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidEventStatusTransition(
+            InvalidEventStatusTransitionException ex,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(DuplicateAssignmentException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateAssignment(
+            DuplicateAssignmentException ex,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(
+            ResourceNotFoundException ex,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenOperation(
+            ForbiddenOperationException ex,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(DuplicateEmailException.class)

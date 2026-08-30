@@ -14,9 +14,9 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 7 / 44 |
+| Completed | 8 / 44 |
 | Current Phase | Phase 1 - Application |
-| Current Module | Module 07 - Temple & Event Management |
+| Current Module | Module 08 - Darshan & Slot Management |
 | Current Module Status | NOT STARTED |
 
 ### Completed Modules
@@ -28,6 +28,7 @@ Cursor must update this file after completing each module.
 - [x] Module 04 - Next.js Frontend Foundation
 - [x] Module 05 - PostgreSQL & Database Engineering
 - [x] Module 06 - Authentication & Authorization
+- [x] Module 07 - Temple & Event Management
 
 ---
 
@@ -255,6 +256,56 @@ None.
 
 ---
 
+## Module 07 - Temple & Event Management
+
+**Status:** COMPLETED
+
+### Implementation
+
+- Flyway `V5__temple_and_event.sql` — `temple`, `temple_admin_assignment`, `temple_event`
+- Temple CRUD (create `PLATFORM_ADMIN` only; update assigned `TEMPLE_ADMIN` or `PLATFORM_ADMIN`)
+- Temple admin assignment management (`PLATFORM_ADMIN` only; duplicate → 409)
+- Temple event CRUD with bounded pagination (default 20, max 100); safe page-offset validation
+- Event create status server-owned — always `DRAFT`; lifecycle transitions enforced on update
+- Centralized `TempleAuthorizationService` for resource-level checks (assignments from DB, not JWT)
+- Public read visibility: `ACTIVE` temples and `PUBLISHED` events only for `DEVOTEE`
+- `docs/temple/TEMPLE_AND_EVENT_MANAGEMENT.md`
+
+### Database
+
+- Flyway V5 applied; `schema_version` = `5` (no migration changes required during hardening)
+- FK integrity, unique assignment, `end_at > start_at`, status CHECK constraints
+
+### Automated Validation
+
+`mvn clean test`
+
+| Metric | Result |
+|--------|--------|
+| Tests run | 70 |
+| Failures | 0 |
+| Errors | 0 |
+| Skipped | 0 |
+| Build | SUCCESS |
+
+### Manual Runtime Validation
+
+| Check | Result |
+|-------|--------|
+| Event create defaults to `DRAFT` | SUCCESS |
+| `DRAFT` → `PUBLISHED` transition | SUCCESS |
+| `PUBLISHED` → `DRAFT` rejected | SUCCESS — HTTP 400 |
+| Invalid schedule (`endAt` ≤ `startAt`) | SUCCESS — HTTP 400, message `Event end time must be after start time` |
+| DB-backed authorization after assignment removal | SUCCESS — existing `TEMPLE_ADMIN` JWT immediately receives HTTP 403 |
+
+### Problems Encountered
+
+- One test run failed due to incorrect local `SPRING_DATASOURCE_PASSWORD` (environment configuration, not code).
+- Runtime startup failed once because `JWT_SECRET` was missing (environment configuration, not code).
+- `curl.exe` JSON quoting produced generic `Invalid request` during one manual schedule test; PowerShell `ConvertTo-Json` confirmed the intended validation response.
+
+---
+
 ## Implementation Artifacts by Module
 
 ### Module 00
@@ -300,6 +351,11 @@ None.
 - Authentication and authorization: `account` table, Spring Security, JWT access tokens
 - No Temple/Event APIs, booking, Redis, Kafka, Docker, Kubernetes, CI/CD, or AWS
 
+### Module 07
+
+- Temple and event domain: Flyway V5, JDBC repositories, REST API, resource-level authorization
+- No Darshan, booking, Redis, Kafka, Docker, Kubernetes, CI/CD, or AWS
+
 ---
 
 ## Architecture Decisions
@@ -312,14 +368,13 @@ None.
 - Do not decide the booking reservation/hold/confirmation vs payment ordering
   in Module 00.
 - Module 06: short-lived JWT access tokens (no refresh tokens); `GET /api/v1/system/database` is `PLATFORM_ADMIN`-only.
+- Module 07: temple admin assignments stored relationally; resource-level authorization enforced per temple; event create status server-owned (`DRAFT`); lifecycle transitions validated on update.
 
 ---
 
 ## Next Module
 
-**Module 07 - Temple & Event Management**
-
-Status: NOT STARTED
+**Module 08 - Darshan & Slot Management** (not started; do not implement until approved)
 
 ---
 
@@ -337,7 +392,7 @@ Status: NOT STARTED
 - [x] Module 04 - Next.js Frontend Foundation
 - [x] Module 05 - PostgreSQL & Database Engineering
 - [x] Module 06 - Authentication & Authorization
-- [ ] Module 07 - Temple & Event Management
+- [x] Module 07 - Temple & Event Management
 - [ ] Module 08 - Darshan & Slot Management
 - [ ] Module 09 - Havan & Puja Booking
 - [ ] Module 10 - Darshan Booking & Concurrency

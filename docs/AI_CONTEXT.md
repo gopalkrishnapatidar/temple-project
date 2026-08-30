@@ -76,13 +76,13 @@ They must be introduced according to the module roadmap.
 - HikariCP pool settings are explicit and environment-overridable
 - Local development uses `temple_app` for datasource and Flyway unless a deliberate migration-role transition is performed
 - Optional separate Flyway/DDL role (`temple_migrator`) bootstrap is reference-only in `backend/db/`
-- Flyway migrations through V4 (`application_metadata` plus `account`)
+- Flyway migrations through V5 (`application_metadata`, `account`, `temple`, `temple_admin_assignment`, `temple_event`)
 - V3 fixes `updated_at` trigger: `NOW()` → `clock_timestamp()`
 - Identity (Module 06): BCrypt passwords; JWT HS256 access tokens (15-minute lifetime, `JWT_SECRET` required); roles `DEVOTEE` / `TEMPLE_ADMIN` / `PLATFORM_ADMIN`
-- Public registration always creates `DEVOTEE` + `ACTIVE`; duplicate email → 409; public registration cannot self-assign admin role
+- Temple/Event (Module 07): temples, admin assignments, events; DB-backed resource-level authorization (not JWT); public reads show `ACTIVE` temples and `PUBLISHED` events only; event create status server-owned (`DRAFT`); lifecycle transitions enforced on update (`DRAFT`→`PUBLISHED`/`CANCELLED`, `PUBLISHED`→`CANCELLED`; invalid transitions → 400)
+- Public registration always creates `DEVOTEE` + `ACTIVE`; duplicate email → 409
 - `GET /api/v1/auth/me` protected; missing/invalid authentication → 401; insufficient role → 403
-- `GET /api/v1/system/database` reports schema/Flyway versions (no secrets); requires `PLATFORM_ADMIN`
-- Health/liveness/readiness endpoints remain public
+- `GET /api/v1/system/database` requires `PLATFORM_ADMIN`; health/liveness/readiness remain public
 
 ## Frontend
 
