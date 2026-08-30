@@ -242,8 +242,8 @@ class AuthApiTest {
 
         mockMvc.perform(get("/api/v1/system/database").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.schemaVersion").value("4"))
-                .andExpect(jsonPath("$.flywayVersion").value("4"));
+                .andExpect(jsonPath("$.schemaVersion").value("5"))
+                .andExpect(jsonPath("$.flywayVersion").value("5"));
     }
 
     @Test
