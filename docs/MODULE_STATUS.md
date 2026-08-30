@@ -14,9 +14,9 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 9 / 44 |
+| Completed | 10 / 44 |
 | Current Phase | Phase 1 - Application |
-| Current Module | Module 09 - Havan & Puja Booking |
+| Current Module | Module 10 - Booking / Concurrency |
 | Current Module Status | NOT STARTED |
 
 ### Completed Modules
@@ -30,6 +30,7 @@ Cursor must update this file after completing each module.
 - [x] Module 06 - Authentication & Authorization
 - [x] Module 07 - Temple & Event Management
 - [x] Module 08 - Darshan & Slot Management
+- [x] Module 09 - Havan & Puja Booking
 
 ---
 
@@ -369,6 +370,94 @@ None.
 
 ---
 
+## Module 09 - Havan & Puja Booking
+
+**Status:** COMPLETED
+
+### Implementation
+
+- Flyway `V7__ritual_and_slot.sql` — `ritual`, `ritual_slot` (no overlap EXCLUDE)
+- Shared Ritual bounded context: Temple → Ritual (PUJA/HAVAN) → RitualSlot
+- Ritual lifecycle: `ACTIVE` / `INACTIVE`; slot lifecycle: `AVAILABLE` / `CANCELLED` (create defaults server-owned)
+- `durationMinutes` is current offering configuration; existing slot `startAt`/`endAt` are not rewritten
+- `price` is `NUMERIC(12,2)` / `BigDecimal`; currency `INR` only; zero allowed; negative rejected
+- Domain/API absolute timestamps are `Instant`; PostgreSQL `TIMESTAMPTZ`; JDBC maps via `OffsetDateTime`
+- Temple-local `date` queries use IANA ZoneId `[startOfDay, nextStartOfDay)`; `date` combined with `from`/`to` → 400
+- Overlapping Ritual slots intentionally allowed (no Darshan-style GiST EXCLUDE)
+- Authorization: `PLATFORM_ADMIN` global; `TEMPLE_ADMIN` DB assignment only; `DEVOTEE` hierarchical read
+- Nested Temple → Ritual → Slot BOLA → 404
+- No booking, capacity, priest/hall assignment, Redis, Kafka, payments, or notifications
+
+### Database
+
+- Flyway V7 applied; `schema_version` = `7`
+- FK `ritual.temple_id` → `temple`, `ritual_slot.ritual_id` → `ritual` (`ON DELETE RESTRICT`)
+- CHECK: type PUJA/HAVAN, duration > 0, price >= 0, currency INR, statuses, `end_at > start_at`
+- Reuses `set_updated_at()` trigger (`clock_timestamp()`)
+- Indexes: `(temple_id, type, status)` on `ritual`; `(ritual_id, start_at, id)` on `ritual_slot`
+
+### Automated Validation
+
+Focused Module 09 tests:
+
+| Metric | Result |
+|--------|--------|
+| Tests run | 25 |
+| Failures | 0 |
+| Errors | 0 |
+| Build | SUCCESS |
+
+Full backend regression (`mvn clean test`):
+
+| Metric | Result |
+|--------|--------|
+| Tests run | 117 |
+| Failures | 0 |
+| Errors | 0 |
+| Skipped | 0 |
+| Build | SUCCESS |
+
+### Manual Runtime Validation
+
+| Check | Result |
+|-------|--------|
+| Actuator overall health | UP |
+| PostgreSQL health | UP |
+| Liveness / readiness | UP |
+| PUJA / HAVAN create | SUCCESS |
+| Type filter PUJA / HAVAN | SUCCESS |
+| Ritual slot create | SUCCESS |
+| Overlapping Ritual slots | SUCCESS — both created |
+| Temple-local date filter | SUCCESS |
+| Invalid duration, price, schedule, currency | SUCCESS — HTTP 400 |
+| Ambiguous `date` + `from`/`to` | SUCCESS — HTTP 400 |
+| DEVOTEE read | SUCCESS |
+| DEVOTEE write | SUCCESS — HTTP 403 |
+| Cross-Temple Ritual BOLA | SUCCESS — HTTP 404 |
+| Cross-Ritual Slot BOLA | SUCCESS — HTTP 404 |
+| Slot AVAILABLE → CANCELLED | SUCCESS |
+| Admin sees CANCELLED history | SUCCESS |
+| DEVOTEE does not see CANCELLED slot | SUCCESS |
+| CANCELLED → AVAILABLE | SUCCESS — HTTP 400 |
+| Ritual ACTIVE → INACTIVE | SUCCESS |
+| Admin sees INACTIVE Ritual | SUCCESS |
+| DEVOTEE INACTIVE Ritual / its slots | SUCCESS — HTTP 404 |
+| Expired JWT | SUCCESS — HTTP 401; re-login restored access |
+
+### Problems Encountered
+
+- PostgreSQL JDBC does not support `ResultSet.getObject(..., Instant.class)` for `timestamptz`. Repository maps `OffsetDateTime` ↔ `Instant`; domain/API remain `Instant`.
+- Java Instant nanoseconds vs PostgreSQL microsecond `TIMESTAMPTZ` rounded a test fixture; the duration-independence assertion was kept (deterministic microsecond Instant).
+- DST API fixture `2026-03-08` was already past; DEVOTEE correctly hid ended slots. Fixture moved to future America/New_York spring-forward `2027-03-14`.
+
+### Final Review
+
+- MUST FIX: NONE
+- Module 09 approved for completion
+- SHOULD FIX LATER items are non-blocking and were not implemented
+
+---
+
 ## Implementation Artifacts by Module
 
 ### Module 00
@@ -419,6 +508,11 @@ None.
 - Darshan and slot domain: Flyway V6, JDBC repositories, nested REST API, overlap constraint
 - No booking, Redis, Kafka, payments, notifications, Docker, Kubernetes, CI/CD, or AWS
 
+### Module 09
+
+- Ritual (PUJA/HAVAN) domain: Flyway V7, JDBC repositories, nested REST API, no overlap constraint
+- No booking, Redis, Kafka, payments, notifications, Docker, Kubernetes, CI/CD, or AWS
+
 ---
 
 ## Architecture Decisions
@@ -433,12 +527,13 @@ None.
 - Module 06: short-lived JWT access tokens (no refresh tokens); `GET /api/v1/system/database` is `PLATFORM_ADMIN`-only.
 - Module 07: temple admin assignments stored relationally; resource-level authorization enforced per temple; event create status server-owned (`DRAFT`); lifecycle transitions validated on update.
 - Module 08: darshan/slot nested under temples; PostgreSQL EXCLUDE overlap for available slots; devotee visibility filters; temple-timezone date queries.
+- Module 09: PUJA and HAVAN share one `ritual` bounded context (separate from Darshan); PostgreSQL `NUMERIC` price; no same-ritual overlap constraint; slot times are scheduled boundaries independent of `durationMinutes`; current price is configuration only (no booking snapshot yet).
 
 ---
 
 ## Next Module
 
-**Module 09 - Havan & Puja Booking**
+**Module 10 - Booking / Concurrency**
 
 Status: NOT STARTED
 
@@ -460,7 +555,7 @@ Status: NOT STARTED
 - [x] Module 06 - Authentication & Authorization
 - [x] Module 07 - Temple & Event Management
 - [x] Module 08 - Darshan & Slot Management
-- [ ] Module 09 - Havan & Puja Booking
+- [x] Module 09 - Havan & Puja Booking
 - [ ] Module 10 - Darshan Booking & Concurrency
 - [ ] Module 11 - Redis & Caching
 - [ ] Module 12 - Real-Time Availability
