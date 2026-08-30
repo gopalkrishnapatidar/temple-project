@@ -29,9 +29,9 @@ class ApplicationMetadataRepositoryTest {
     private TransactionTemplate transactionTemplate;
 
     @Test
-    void schemaVersionIsFiveAfterFlyway() {
-        assertThat(applicationMetadataRepository.findValue("schema_version")).contains("5");
-        assertThat(applicationMetadataRepository.findLatestFlywayVersion()).contains("5");
+    void schemaVersionIsSixAfterFlyway() {
+        assertThat(applicationMetadataRepository.findValue("schema_version")).contains("6");
+        assertThat(applicationMetadataRepository.findLatestFlywayVersion()).contains("6");
     }
 
     @Test
