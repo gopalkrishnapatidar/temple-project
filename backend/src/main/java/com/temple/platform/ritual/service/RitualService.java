@@ -1,5 +1,9 @@
 package com.temple.platform.ritual.service;
 
+import com.temple.platform.cache.CacheInvalidationPublisher;
+import com.temple.platform.cache.CacheKeys;
+import com.temple.platform.cache.CacheProperties;
+import com.temple.platform.cache.CatalogCache;
 import com.temple.platform.booking.exception.SlotCapacityBelowConfirmedBookingsException;
 import com.temple.platform.booking.repository.BookingRepository;
 import com.temple.platform.darshan.api.SlotQuerySupport;
@@ -56,6 +60,9 @@ public class RitualService {
     private final RitualSlotRepository slotRepository;
     private final BookingRepository bookingRepository;
     private final TempleAuthorizationService authorizationService;
+    private final CatalogCache catalogCache;
+    private final CacheProperties cacheProperties;
+    private final CacheInvalidationPublisher cacheInvalidation;
 
     public RitualService(
             TempleRepository templeRepository,
@@ -63,13 +70,19 @@ public class RitualService {
             RitualRepository ritualRepository,
             RitualSlotRepository slotRepository,
             BookingRepository bookingRepository,
-            TempleAuthorizationService authorizationService) {
+            TempleAuthorizationService authorizationService,
+            CatalogCache catalogCache,
+            CacheProperties cacheProperties,
+            CacheInvalidationPublisher cacheInvalidation) {
         this.templeRepository = templeRepository;
         this.assignmentRepository = assignmentRepository;
         this.ritualRepository = ritualRepository;
         this.slotRepository = slotRepository;
         this.bookingRepository = bookingRepository;
         this.authorizationService = authorizationService;
+        this.catalogCache = catalogCache;
+        this.cacheProperties = cacheProperties;
+        this.cacheInvalidation = cacheInvalidation;
     }
 
     @Transactional
@@ -95,6 +108,7 @@ public class RitualService {
                     currency,
                     RitualStatus.ACTIVE
             );
+            cacheInvalidation.invalidateAfterCommit(CacheKeys.ritualId(ritual.id()));
             return toResponse(ritual);
         } catch (DataIntegrityViolationException ex) {
             throw translateRitualConstraintViolation(ex);
@@ -124,8 +138,12 @@ public class RitualService {
     @Transactional(readOnly = true)
     public RitualResponse getRitual(long templeId, long ritualId, Authentication authentication) {
         Temple temple = requireVisibleTemple(templeId, authentication);
-        Ritual ritual = ritualRepository.findByTempleIdAndId(templeId, ritualId)
-                .orElseThrow(() -> new ResourceNotFoundException("Ritual not found"));
+        Ritual ritual = catalogCache.getOrLoad(
+                CacheKeys.ritualId(ritualId),
+                Ritual.class,
+                cacheProperties.getRitualIdTtl(),
+                () -> ritualRepository.findByTempleIdAndId(templeId, ritualId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Ritual not found")));
         if (!canViewRitual(ritual, temple, authentication)) {
             throw new ResourceNotFoundException("Ritual not found");
         }
@@ -169,6 +187,7 @@ public class RitualService {
         } catch (DataIntegrityViolationException ex) {
             throw translateRitualConstraintViolation(ex);
         }
+        cacheInvalidation.invalidateAfterCommit(CacheKeys.ritualId(ritualId));
         return toResponse(ritualRepository.findByTempleIdAndId(templeId, ritualId).orElse(existing));
     }
 
