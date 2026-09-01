@@ -1,5 +1,10 @@
 package com.temple.platform.temple.service;
 
+import com.temple.platform.cache.CacheInvalidationPublisher;
+import com.temple.platform.cache.CacheKeys;
+import com.temple.platform.cache.CacheProperties;
+import com.temple.platform.cache.CatalogCache;
+import com.temple.platform.cache.CatalogCacheTypeRefs;
 import com.temple.platform.temple.api.dto.CreateTempleAdminAssignmentRequest;
 import com.temple.platform.temple.api.dto.CreateTempleEventRequest;
 import com.temple.platform.temple.api.dto.CreateTempleRequest;
@@ -40,16 +45,25 @@ public class TempleService {
     private final TempleAdminAssignmentRepository assignmentRepository;
     private final TempleEventRepository eventRepository;
     private final TempleAuthorizationService authorizationService;
+    private final CatalogCache catalogCache;
+    private final CacheProperties cacheProperties;
+    private final CacheInvalidationPublisher cacheInvalidation;
 
     public TempleService(
             TempleRepository templeRepository,
             TempleAdminAssignmentRepository assignmentRepository,
             TempleEventRepository eventRepository,
-            TempleAuthorizationService authorizationService) {
+            TempleAuthorizationService authorizationService,
+            CatalogCache catalogCache,
+            CacheProperties cacheProperties,
+            CacheInvalidationPublisher cacheInvalidation) {
         this.templeRepository = templeRepository;
         this.assignmentRepository = assignmentRepository;
         this.eventRepository = eventRepository;
         this.authorizationService = authorizationService;
+        this.catalogCache = catalogCache;
+        this.cacheProperties = cacheProperties;
+        this.cacheInvalidation = cacheInvalidation;
     }
 
     @Transactional
@@ -65,6 +79,9 @@ public class TempleService {
                 request.timezone().trim(),
                 request.status()
         );
+        cacheInvalidation.invalidateAfterCommit(
+                CacheKeys.templeId(temple.id()),
+                CacheKeys.publicTempleList());
         return toResponse(temple);
     }
 
@@ -79,15 +96,23 @@ public class TempleService {
         } else if (templeAdmin) {
             temples = templeRepository.findAllVisible(false, accountId);
         } else {
-            temples = templeRepository.findAllVisible(false, 0);
+            temples = catalogCache.getOrLoad(
+                    CacheKeys.publicTempleList(),
+                    CatalogCacheTypeRefs.TEMPLE_LIST,
+                    cacheProperties.getPublicTempleListTtl(),
+                    () -> templeRepository.findAllVisible(false, 0));
         }
         return temples.stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
     public TempleResponse getTemple(long templeId, Authentication authentication) {
-        Temple temple = templeRepository.findById(templeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Temple not found"));
+        Temple temple = catalogCache.getOrLoad(
+                CacheKeys.templeId(templeId),
+                Temple.class,
+                cacheProperties.getTempleIdTtl(),
+                () -> templeRepository.findById(templeId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Temple not found")));
         if (!canViewTemple(temple, authentication)) {
             throw new ResourceNotFoundException("Temple not found");
         }
@@ -114,6 +139,9 @@ public class TempleService {
         if (!templeRepository.update(templeId, fields)) {
             throw new ResourceNotFoundException("Temple not found");
         }
+        cacheInvalidation.invalidateAfterCommit(
+                CacheKeys.templeId(templeId),
+                CacheKeys.publicTempleList());
         return toResponse(templeRepository.findById(templeId).orElse(existing));
     }
 
@@ -157,6 +185,7 @@ public class TempleService {
                 request.endAt(),
                 EventStatus.DRAFT
         );
+        cacheInvalidation.invalidateAfterCommit(CacheKeys.eventId(event.id()));
         return toEventResponse(event);
     }
 
@@ -190,8 +219,12 @@ public class TempleService {
         if (!canViewTemple(temple, authentication)) {
             throw new ResourceNotFoundException("Temple not found");
         }
-        TempleEvent event = eventRepository.findByTempleIdAndId(templeId, eventId)
-                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+        TempleEvent event = catalogCache.getOrLoad(
+                CacheKeys.eventId(eventId),
+                TempleEvent.class,
+                cacheProperties.getEventIdTtl(),
+                () -> eventRepository.findByTempleIdAndId(templeId, eventId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Event not found")));
         if (!canViewEvent(event, templeId, authentication)) {
             throw new ResourceNotFoundException("Event not found");
         }
@@ -223,6 +256,7 @@ public class TempleService {
         if (!eventRepository.update(templeId, eventId, fields)) {
             throw new ResourceNotFoundException("Event not found");
         }
+        cacheInvalidation.invalidateAfterCommit(CacheKeys.eventId(eventId));
         return toEventResponse(eventRepository.findByTempleIdAndId(templeId, eventId).orElse(existing));
     }
 

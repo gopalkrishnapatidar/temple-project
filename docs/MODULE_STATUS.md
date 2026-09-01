@@ -14,10 +14,10 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 11 / 44 |
+| Completed | 12 / 44 |
 | Current Phase | Phase 1 - Application |
 | Current Module | Module 11 - Redis & Caching |
-| Current Module Status | NOT STARTED |
+| Current Module Status | COMPLETED |
 
 ### Completed Modules
 
@@ -32,6 +32,7 @@ Cursor must update this file after completing each module.
 - [x] Module 08 - Darshan & Slot Management
 - [x] Module 09 - Havan & Puja Booking
 - [x] Module 10 - Booking / Concurrency
+- [x] Module 11 - Redis & Caching
 
 ---
 
@@ -593,9 +594,39 @@ Coverage includes Darshan/Ritual booking, idempotency, BOLA, capacity invariant,
 
 ---
 
+## Module 11 - Redis & Caching
+
+**Status:** COMPLETED
+
+### Implementation
+
+- Spring Data Redis with Lettuce and fail-open cache-aside catalog caching
+- Cached temple, darshan, ritual, and event catalog reads with bounded TTLs
+- PostgreSQL remains authoritative for booking, capacity, availability, idempotency, and authentication
+- Cache invalidation executes only after successful database commit
+- Redis is not a readiness dependency
+
+### Validation
+
+- Full regression: 160 tests, 0 failures, 0 errors, 0 skipped
+- Verified cache MISS -> DB -> SET -> HIT and TTL behavior
+- Verified successful PATCH invalidates entity and public-list keys after commit
+- Verified subsequent GET repopulates Redis from PostgreSQL
+- Verified Redis outage fail-open: catalog API remained HTTP 200
+- Verified application readiness remained UP during Redis outage
+- Verified Redis recovery after restart
+- Verified no booking, capacity, authentication, or idempotency data was cached
+- Local Redis-compatible Memurai listener verified on 127.0.0.1:6379
+
+### Final Review
+
+- MUST FIX: NONE
+
+---
+
 ## Next Module
 
-**Module 11 - Redis & Caching**
+**Module 12 - Real-Time Availability**
 
 Status: NOT STARTED
 
@@ -619,7 +650,7 @@ Status: NOT STARTED
 - [x] Module 08 - Darshan & Slot Management
 - [x] Module 09 - Havan & Puja Booking
 - [x] Module 10 - Darshan Booking & Concurrency
-- [ ] Module 11 - Redis & Caching
+- [x] Module 11 - Redis & Caching
 - [ ] Module 12 - Real-Time Availability
 - [ ] Module 13 - Payments & Donations
 - [ ] Module 14 - Notifications & Kafka

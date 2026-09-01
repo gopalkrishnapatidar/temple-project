@@ -1,5 +1,10 @@
 package com.temple.platform.darshan.service;
 
+import com.temple.platform.cache.CacheInvalidationPublisher;
+import com.temple.platform.cache.CacheKeys;
+import com.temple.platform.cache.CacheProperties;
+import com.temple.platform.cache.CatalogCache;
+import com.temple.platform.cache.CatalogCacheTypeRefs;
 import com.temple.platform.booking.exception.SlotCapacityBelowConfirmedBookingsException;
 import com.temple.platform.darshan.api.SlotQuerySupport;
 import com.temple.platform.darshan.api.dto.CreateDarshanRequest;
@@ -47,6 +52,9 @@ public class DarshanService {
     private final DarshanSlotRepository slotRepository;
     private final BookingRepository bookingRepository;
     private final TempleAuthorizationService authorizationService;
+    private final CatalogCache catalogCache;
+    private final CacheProperties cacheProperties;
+    private final CacheInvalidationPublisher cacheInvalidation;
 
     public DarshanService(
             TempleRepository templeRepository,
@@ -54,13 +62,19 @@ public class DarshanService {
             DarshanRepository darshanRepository,
             DarshanSlotRepository slotRepository,
             BookingRepository bookingRepository,
-            TempleAuthorizationService authorizationService) {
+            TempleAuthorizationService authorizationService,
+            CatalogCache catalogCache,
+            CacheProperties cacheProperties,
+            CacheInvalidationPublisher cacheInvalidation) {
         this.templeRepository = templeRepository;
         this.assignmentRepository = assignmentRepository;
         this.darshanRepository = darshanRepository;
         this.slotRepository = slotRepository;
         this.bookingRepository = bookingRepository;
         this.authorizationService = authorizationService;
+        this.catalogCache = catalogCache;
+        this.cacheProperties = cacheProperties;
+        this.cacheInvalidation = cacheInvalidation;
     }
 
     @Transactional
@@ -76,6 +90,9 @@ public class DarshanService {
                 normalizeOptional(request.description()),
                 DarshanStatus.ACTIVE
         );
+        cacheInvalidation.invalidateAfterCommit(
+                CacheKeys.darshanId(darshan.id()),
+                CacheKeys.publicDarshanList(templeId));
         return toResponse(darshan);
     }
 
@@ -83,17 +100,29 @@ public class DarshanService {
     public List<DarshanResponse> listDarshans(long templeId, Authentication authentication) {
         Temple temple = requireVisibleTemple(templeId, authentication);
         boolean adminView = canManageTemple(temple.id(), authentication);
-        return darshanRepository.findByTempleId(templeId, adminView)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        if (adminView) {
+            return darshanRepository.findByTempleId(templeId, true)
+                    .stream()
+                    .map(this::toResponse)
+                    .toList();
+        }
+        List<Darshan> darshans = catalogCache.getOrLoad(
+                CacheKeys.publicDarshanList(templeId),
+                CatalogCacheTypeRefs.DARSHAN_LIST,
+                cacheProperties.getPublicDarshanListTtl(),
+                () -> darshanRepository.findByTempleId(templeId, false));
+        return darshans.stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
     public DarshanResponse getDarshan(long templeId, long darshanId, Authentication authentication) {
         Temple temple = requireVisibleTemple(templeId, authentication);
-        Darshan darshan = darshanRepository.findByTempleIdAndId(templeId, darshanId)
-                .orElseThrow(() -> new ResourceNotFoundException("Darshan not found"));
+        Darshan darshan = catalogCache.getOrLoad(
+                CacheKeys.darshanId(darshanId),
+                Darshan.class,
+                cacheProperties.getDarshanIdTtl(),
+                () -> darshanRepository.findByTempleIdAndId(templeId, darshanId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Darshan not found")));
         if (!canViewDarshan(darshan, temple, authentication)) {
             throw new ResourceNotFoundException("Darshan not found");
         }
@@ -117,6 +146,9 @@ public class DarshanService {
         if (!darshanRepository.update(templeId, darshanId, fields)) {
             throw new ResourceNotFoundException("Darshan not found");
         }
+        cacheInvalidation.invalidateAfterCommit(
+                CacheKeys.darshanId(darshanId),
+                CacheKeys.publicDarshanList(templeId));
         return toResponse(darshanRepository.findByTempleIdAndId(templeId, darshanId).orElse(existing));
     }
 
