@@ -22,6 +22,7 @@ public class RitualSlotRepository {
             rs.getLong("ritual_id"),
             TimestamptzMapping.toInstant(rs, "start_at"),
             TimestamptzMapping.toInstant(rs, "end_at"),
+            rs.getInt("capacity"),
             RitualSlotStatus.valueOf(rs.getString("status")),
             TimestamptzMapping.toInstant(rs, "created_at"),
             TimestamptzMapping.toInstant(rs, "updated_at")
@@ -37,20 +38,22 @@ public class RitualSlotRepository {
             long ritualId,
             Instant startAt,
             Instant endAt,
+            int capacity,
             RitualSlotStatus status) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
                     """
-                    INSERT INTO ritual_slot (ritual_id, start_at, end_at, status)
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO ritual_slot (ritual_id, start_at, end_at, capacity, status)
+                    VALUES (?, ?, ?, ?, ?)
                     """,
                     new String[] {"id"}
             );
             ps.setLong(1, ritualId);
             ps.setObject(2, TimestamptzMapping.toOffsetDateTime(startAt));
             ps.setObject(3, TimestamptzMapping.toOffsetDateTime(endAt));
-            ps.setString(4, status.name());
+            ps.setInt(4, capacity);
+            ps.setString(5, status.name());
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
@@ -64,7 +67,7 @@ public class RitualSlotRepository {
     public Optional<RitualSlot> findByRitualIdAndId(long ritualId, long slotId) {
         return jdbcTemplate.query(
                 """
-                SELECT id, ritual_id, start_at, end_at, status, created_at, updated_at
+                SELECT id, ritual_id, start_at, end_at, capacity, status, created_at, updated_at
                 FROM ritual_slot
                 WHERE ritual_id = ? AND id = ?
                 """,
@@ -82,7 +85,7 @@ public class RitualSlotRepository {
             int limit,
             int offset) {
         StringBuilder sql = new StringBuilder("""
-                SELECT id, ritual_id, start_at, end_at, status, created_at, updated_at
+                SELECT id, ritual_id, start_at, end_at, capacity, status, created_at, updated_at
                 FROM ritual_slot
                 WHERE ritual_id = ?
                 """);
@@ -135,6 +138,10 @@ public class RitualSlotRepository {
             sets.add("end_at = ?");
             args.add(TimestamptzMapping.toOffsetDateTime(fields.endAt()));
         }
+        if (fields.capacity() != null) {
+            sets.add("capacity = ?");
+            args.add(fields.capacity());
+        }
         if (fields.status() != null) {
             sets.add("status = ?");
             args.add(fields.status().name());
@@ -149,9 +156,35 @@ public class RitualSlotRepository {
         return jdbcTemplate.update(sql, args.toArray()) == 1;
     }
 
+    public Optional<RitualSlot> findById(long slotId) {
+        return jdbcTemplate.query(
+                """
+                SELECT id, ritual_id, start_at, end_at, capacity, status, created_at, updated_at
+                FROM ritual_slot
+                WHERE id = ?
+                """,
+                ROW_MAPPER,
+                slotId
+        ).stream().findFirst();
+    }
+
+    public Optional<RitualSlot> lockById(long slotId) {
+        return jdbcTemplate.query(
+                """
+                SELECT id, ritual_id, start_at, end_at, capacity, status, created_at, updated_at
+                FROM ritual_slot
+                WHERE id = ?
+                FOR UPDATE
+                """,
+                ROW_MAPPER,
+                slotId
+        ).stream().findFirst();
+    }
+
     public record UpdateSlotFields(
             Instant startAt,
             Instant endAt,
+            Integer capacity,
             RitualSlotStatus status
     ) {
     }

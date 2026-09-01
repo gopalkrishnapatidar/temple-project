@@ -1,5 +1,7 @@
 package com.temple.platform.ritual.api;
 
+import com.temple.platform.booking.domain.BookingStatus;
+import com.temple.platform.booking.repository.BookingRepository;
 import com.temple.platform.identity.api.dto.LoginResponse;
 import com.temple.platform.identity.domain.AccountRole;
 import com.temple.platform.identity.domain.AccountStatus;
@@ -67,6 +69,111 @@ class RitualApiTest {
 
     @Autowired
     private RitualSlotRepository slotRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Test
+    void capacityCannotBeReducedBelowConfirmedBookings() throws Exception {
+        String token = loginAs(createAccount(AccountRole.PLATFORM_ADMIN));
+        long templeId = createTempleViaApi(token);
+        long ritualId = createRitualViaApi(token, templeId, RitualType.PUJA, "Capacity Guard");
+        Instant start = Instant.now().plus(Duration.ofDays(16));
+        MvcResult created = mockMvc.perform(post("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(slotJson(start, start.plus(Duration.ofHours(1)), 5)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long slotId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+        long devoteeId = createAccount(AccountRole.DEVOTEE);
+        bookingRepository.insertIgnoringIdempotencyConflict(
+                UUID.randomUUID(),
+                devoteeId,
+                null,
+                slotId,
+                3,
+                BookingStatus.CONFIRMED,
+                UUID.randomUUID().toString()
+        );
+
+        mockMvc.perform(patch("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots/" + slotId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"capacity\":2}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message")
+                        .value("Slot capacity cannot be reduced below confirmed booking quantity"));
+
+        mockMvc.perform(get("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots/" + slotId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.capacity").value(5));
+    }
+
+    @Test
+    void capacityCanBeReducedToConfirmedQuantity() throws Exception {
+        String token = loginAs(createAccount(AccountRole.PLATFORM_ADMIN));
+        long templeId = createTempleViaApi(token);
+        long ritualId = createRitualViaApi(token, templeId, RitualType.HAVAN, "Exact Capacity");
+        Instant start = Instant.now().plus(Duration.ofDays(17));
+        MvcResult created = mockMvc.perform(post("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(slotJson(start, start.plus(Duration.ofHours(1)), 5)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long slotId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+        long devoteeId = createAccount(AccountRole.DEVOTEE);
+        bookingRepository.insertIgnoringIdempotencyConflict(
+                UUID.randomUUID(),
+                devoteeId,
+                null,
+                slotId,
+                3,
+                BookingStatus.CONFIRMED,
+                UUID.randomUUID().toString()
+        );
+
+        mockMvc.perform(patch("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots/" + slotId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"capacity\":3}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.capacity").value(3));
+    }
+
+    @Test
+    void capacityCanBeIncreasedWhenBookingsExist() throws Exception {
+        String token = loginAs(createAccount(AccountRole.PLATFORM_ADMIN));
+        long templeId = createTempleViaApi(token);
+        long ritualId = createRitualViaApi(token, templeId, RitualType.PUJA, "Increase Capacity");
+        Instant start = Instant.now().plus(Duration.ofDays(18));
+        MvcResult created = mockMvc.perform(post("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(slotJson(start, start.plus(Duration.ofHours(1)), 5)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long slotId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+        long devoteeId = createAccount(AccountRole.DEVOTEE);
+        bookingRepository.insertIgnoringIdempotencyConflict(
+                UUID.randomUUID(),
+                devoteeId,
+                null,
+                slotId,
+                2,
+                BookingStatus.CONFIRMED,
+                UUID.randomUUID().toString()
+        );
+
+        mockMvc.perform(patch("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots/" + slotId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"capacity\":8}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.capacity").value(8));
+    }
 
     @Test
     void platformAdminCanCreateGetListAndUpdateRituals() throws Exception {
@@ -316,7 +423,7 @@ class RitualApiTest {
         long ritualA = createRitualViaApi(token, templeId, RitualType.PUJA, "Ritual A");
         long ritualB = createRitualViaApi(token, templeId, RitualType.HAVAN, "Ritual B");
         Instant start = Instant.now().plus(Duration.ofDays(4));
-        var slot = slotRepository.insert(ritualA, start, start.plus(Duration.ofHours(1)), RitualSlotStatus.AVAILABLE);
+        var slot = slotRepository.insert(ritualA, start, start.plus(Duration.ofHours(1)), 10, RitualSlotStatus.AVAILABLE);
 
         mockMvc.perform(get("/api/v1/temples/" + templeId + "/rituals/" + ritualB + "/slots/" + slot.id())
                         .header("Authorization", "Bearer " + token))
@@ -369,9 +476,9 @@ class RitualApiTest {
         long templeId = createTempleViaApi(token);
         long ritualId = createRitualViaApi(token, templeId, RitualType.PUJA, "Past");
         Instant pastStart = Instant.now().minus(Duration.ofDays(2));
-        var past = slotRepository.insert(ritualId, pastStart, pastStart.plus(Duration.ofHours(1)), RitualSlotStatus.AVAILABLE);
+        var past = slotRepository.insert(ritualId, pastStart, pastStart.plus(Duration.ofHours(1)), 10, RitualSlotStatus.AVAILABLE);
         Instant futureStart = Instant.now().plus(Duration.ofDays(3));
-        slotRepository.insert(ritualId, futureStart, futureStart.plus(Duration.ofHours(1)), RitualSlotStatus.AVAILABLE);
+        slotRepository.insert(ritualId, futureStart, futureStart.plus(Duration.ofHours(1)), 10, RitualSlotStatus.AVAILABLE);
         String devoteeToken = registerDevotee();
 
         mockMvc.perform(get("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots")
@@ -397,6 +504,18 @@ class RitualApiTest {
                         .content(slotJson(start, start)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Slot end time must be after start time"));
+
+        mockMvc.perform(post("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "startAt":"%s",
+                                  "endAt":"%s",
+                                  "capacity":0
+                                }
+                                """.formatted(start, start.plus(Duration.ofHours(1)))))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -441,7 +560,7 @@ class RitualApiTest {
                 RitualStatus.ACTIVE
         ).id();
         Instant start = Instant.parse("2026-09-01T18:30:00Z");
-        slotRepository.insert(ritualId, start, start.plus(Duration.ofHours(1)), RitualSlotStatus.AVAILABLE);
+        slotRepository.insert(ritualId, start, start.plus(Duration.ofHours(1)), 10, RitualSlotStatus.AVAILABLE);
         String devoteeToken = registerDevotee();
 
         mockMvc.perform(get("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots?date=2026-09-02")
@@ -477,7 +596,7 @@ class RitualApiTest {
                 RitualStatus.ACTIVE
         ).id();
         Instant start = Instant.parse("2027-03-14T05:00:00Z");
-        slotRepository.insert(ritualId, start, start.plus(Duration.ofHours(1)), RitualSlotStatus.AVAILABLE);
+        slotRepository.insert(ritualId, start, start.plus(Duration.ofHours(1)), 10, RitualSlotStatus.AVAILABLE);
         String devoteeToken = registerDevotee();
 
         mockMvc.perform(get("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots?date=2027-03-14")
@@ -546,8 +665,8 @@ class RitualApiTest {
 
         long ritualId = createRitualViaApi(token, templeId, RitualType.HAVAN, "Slots");
         Instant start = Instant.now().plus(Duration.ofDays(15));
-        slotRepository.insert(ritualId, start, start.plus(Duration.ofHours(1)), RitualSlotStatus.AVAILABLE);
-        slotRepository.insert(ritualId, start, start.plus(Duration.ofHours(2)), RitualSlotStatus.AVAILABLE);
+        slotRepository.insert(ritualId, start, start.plus(Duration.ofHours(1)), 10, RitualSlotStatus.AVAILABLE);
+        slotRepository.insert(ritualId, start, start.plus(Duration.ofHours(2)), 10, RitualSlotStatus.AVAILABLE);
 
         mockMvc.perform(get("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots?size=101")
                         .header("Authorization", "Bearer " + token))
@@ -574,7 +693,7 @@ class RitualApiTest {
         long ritualId = createRitualViaApi(token, templeId, RitualType.PUJA, "Duration");
         Instant start = Instant.parse("2026-12-15T17:26:08.970450Z");
         Instant end = start.plus(Duration.ofMinutes(45));
-        var slot = slotRepository.insert(ritualId, start, end, RitualSlotStatus.AVAILABLE);
+        var slot = slotRepository.insert(ritualId, start, end, 10, RitualSlotStatus.AVAILABLE);
 
         mockMvc.perform(patch("/api/v1/temples/" + templeId + "/rituals/" + ritualId)
                         .header("Authorization", "Bearer " + token)
@@ -682,11 +801,16 @@ class RitualApiTest {
     }
 
     private static String slotJson(Instant start, Instant end) {
+        return slotJson(start, end, 10);
+    }
+
+    private static String slotJson(Instant start, Instant end, int capacity) {
         return """
                 {
                   "startAt":"%s",
-                  "endAt":"%s"
+                  "endAt":"%s",
+                  "capacity":%d
                 }
-                """.formatted(start, end);
+                """.formatted(start, end, capacity);
     }
 }

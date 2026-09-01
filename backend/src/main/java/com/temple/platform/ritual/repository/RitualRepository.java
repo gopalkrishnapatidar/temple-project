@@ -77,6 +77,19 @@ public class RitualRepository {
                 .orElseThrow(() -> new IllegalStateException("Inserted ritual not found"));
     }
 
+    public Optional<Ritual> findById(long ritualId) {
+        return jdbcTemplate.query(
+                """
+                SELECT id, temple_id, type, name, description, duration_minutes, price, currency, status,
+                       created_at, updated_at
+                FROM ritual
+                WHERE id = ?
+                """,
+                ROW_MAPPER,
+                ritualId
+        ).stream().findFirst();
+    }
+
     public Optional<Ritual> findByTempleIdAndId(long templeId, long ritualId) {
         return jdbcTemplate.query(
                 """

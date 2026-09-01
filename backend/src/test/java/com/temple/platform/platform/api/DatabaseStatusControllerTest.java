@@ -27,12 +27,12 @@ class DatabaseStatusControllerTest {
 
     @Test
     void databaseReturnsSchemaAndFlywayVersions() throws Exception {
-        when(applicationMetadataRepository.findValue("schema_version")).thenReturn(Optional.of("7"));
-        when(applicationMetadataRepository.findLatestFlywayVersion()).thenReturn(Optional.of("7"));
+        when(applicationMetadataRepository.findValue("schema_version")).thenReturn(Optional.of("8"));
+        when(applicationMetadataRepository.findLatestFlywayVersion()).thenReturn(Optional.of("8"));
 
         mockMvc.perform(get("/api/v1/system/database"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.schemaVersion").value("7"))
-                .andExpect(jsonPath("$.flywayVersion").value("7"));
+                .andExpect(jsonPath("$.schemaVersion").value("8"))
+                .andExpect(jsonPath("$.flywayVersion").value("8"));
     }
 }

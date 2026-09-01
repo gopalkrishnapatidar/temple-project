@@ -7,6 +7,7 @@ public record RitualSlot(
         long ritualId,
         Instant startAt,
         Instant endAt,
+        int capacity,
         RitualSlotStatus status,
         Instant createdAt,
         Instant updatedAt
