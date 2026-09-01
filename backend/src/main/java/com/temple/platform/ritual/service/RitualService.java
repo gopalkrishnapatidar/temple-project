@@ -1,5 +1,7 @@
 package com.temple.platform.ritual.service;
 
+import com.temple.platform.booking.exception.SlotCapacityBelowConfirmedBookingsException;
+import com.temple.platform.booking.repository.BookingRepository;
 import com.temple.platform.darshan.api.SlotQuerySupport;
 import com.temple.platform.ritual.api.dto.CreateRitualRequest;
 import com.temple.platform.ritual.api.dto.CreateRitualSlotRequest;
@@ -18,6 +20,7 @@ import com.temple.platform.ritual.exception.InvalidRitualCurrencyException;
 import com.temple.platform.ritual.exception.InvalidRitualDurationException;
 import com.temple.platform.ritual.exception.InvalidRitualNameException;
 import com.temple.platform.ritual.exception.InvalidRitualPriceException;
+import com.temple.platform.ritual.exception.InvalidRitualSlotCapacityException;
 import com.temple.platform.ritual.exception.InvalidRitualSlotScheduleException;
 import com.temple.platform.ritual.exception.InvalidRitualSlotStatusTransitionException;
 import com.temple.platform.ritual.repository.RitualRepository;
@@ -51,6 +54,7 @@ public class RitualService {
     private final TempleAdminAssignmentRepository assignmentRepository;
     private final RitualRepository ritualRepository;
     private final RitualSlotRepository slotRepository;
+    private final BookingRepository bookingRepository;
     private final TempleAuthorizationService authorizationService;
 
     public RitualService(
@@ -58,11 +62,13 @@ public class RitualService {
             TempleAdminAssignmentRepository assignmentRepository,
             RitualRepository ritualRepository,
             RitualSlotRepository slotRepository,
+            BookingRepository bookingRepository,
             TempleAuthorizationService authorizationService) {
         this.templeRepository = templeRepository;
         this.assignmentRepository = assignmentRepository;
         this.ritualRepository = ritualRepository;
         this.slotRepository = slotRepository;
+        this.bookingRepository = bookingRepository;
         this.authorizationService = authorizationService;
     }
 
@@ -175,11 +181,13 @@ public class RitualService {
         authorizationService.requireTempleManagement(authentication, templeId);
         requireRitualInTemple(templeId, ritualId);
         validateSlotSchedule(request.startAt(), request.endAt());
+        validateCapacity(request.capacity());
         try {
             RitualSlot slot = slotRepository.insert(
                     ritualId,
                     request.startAt(),
                     request.endAt(),
+                    request.capacity(),
                     RitualSlotStatus.AVAILABLE
             );
             return toSlotResponse(slot);
@@ -261,7 +269,20 @@ public class RitualService {
             UpdateRitualSlotRequest request,
             Authentication authentication) {
         authorizationService.requireTempleManagement(authentication, templeId);
-        RitualSlot existing = requireSlotInRitual(templeId, ritualId, slotId);
+        requireRitualInTemple(templeId, ritualId);
+        RitualSlot existing;
+        if (request.capacity() != null) {
+            existing = slotRepository.lockById(slotId)
+                    .filter(slot -> slot.ritualId() == ritualId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Ritual slot not found"));
+            validateCapacity(request.capacity());
+            int confirmedQuantity = bookingRepository.sumConfirmedQuantityForRitualSlot(slotId);
+            if (request.capacity() < confirmedQuantity) {
+                throw new SlotCapacityBelowConfirmedBookingsException();
+            }
+        } else {
+            existing = requireSlotInRitual(templeId, ritualId, slotId);
+        }
         Instant startAt = request.startAt() != null ? request.startAt() : existing.startAt();
         Instant endAt = request.endAt() != null ? request.endAt() : existing.endAt();
         validateSlotSchedule(startAt, endAt);
@@ -271,6 +292,7 @@ public class RitualService {
         RitualSlotRepository.UpdateSlotFields fields = new RitualSlotRepository.UpdateSlotFields(
                 request.startAt(),
                 request.endAt(),
+                request.capacity(),
                 request.status()
         );
         try {
@@ -369,6 +391,12 @@ public class RitualService {
         }
     }
 
+    private static void validateCapacity(Integer capacity) {
+        if (capacity == null || capacity <= 0) {
+            throw new InvalidRitualSlotCapacityException();
+        }
+    }
+
     private static void validateSlotSchedule(Instant startAt, Instant endAt) {
         if (startAt == null || endAt == null || !endAt.isAfter(startAt)) {
             throw new InvalidRitualSlotScheduleException();
@@ -406,6 +434,9 @@ public class RitualService {
         String message = ex.getMostSpecificCause().getMessage();
         if (message != null && message.contains("ritual_slot_end_after_start")) {
             return new InvalidRitualSlotScheduleException();
+        }
+        if (message != null && message.contains("ritual_slot_capacity_positive")) {
+            return new InvalidRitualSlotCapacityException();
         }
         return new IllegalArgumentException("Invalid slot data");
     }
@@ -447,6 +478,7 @@ public class RitualService {
                 slot.ritualId(),
                 slot.startAt(),
                 slot.endAt(),
+                slot.capacity(),
                 slot.status(),
                 slot.createdAt(),
                 slot.updatedAt()

@@ -64,6 +64,31 @@ public class DarshanSlotRepository {
                 .orElseThrow(() -> new IllegalStateException("Inserted darshan slot not found"));
     }
 
+    public Optional<DarshanSlot> findById(long slotId) {
+        return jdbcTemplate.query(
+                """
+                SELECT id, darshan_id, start_at, end_at, capacity, status, created_at, updated_at
+                FROM darshan_slot
+                WHERE id = ?
+                """,
+                ROW_MAPPER,
+                slotId
+        ).stream().findFirst();
+    }
+
+    public Optional<DarshanSlot> lockById(long slotId) {
+        return jdbcTemplate.query(
+                """
+                SELECT id, darshan_id, start_at, end_at, capacity, status, created_at, updated_at
+                FROM darshan_slot
+                WHERE id = ?
+                FOR UPDATE
+                """,
+                ROW_MAPPER,
+                slotId
+        ).stream().findFirst();
+    }
+
     public Optional<DarshanSlot> findByDarshanIdAndId(long darshanId, long slotId) {
         return jdbcTemplate.query(
                 """

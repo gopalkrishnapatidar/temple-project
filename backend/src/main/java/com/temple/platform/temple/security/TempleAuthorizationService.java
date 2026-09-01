@@ -37,6 +37,10 @@ public class TempleAuthorizationService {
         return hasRole(authentication, AccountRole.TEMPLE_ADMIN);
     }
 
+    public boolean isDevotee(Authentication authentication) {
+        return hasRole(authentication, AccountRole.DEVOTEE);
+    }
+
     public void requirePlatformAdmin(Authentication authentication) {
         if (!isPlatformAdmin(authentication)) {
             throw new ForbiddenOperationException("Platform administrator access required");

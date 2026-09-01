@@ -1,5 +1,6 @@
 package com.temple.platform.darshan.service;
 
+import com.temple.platform.booking.exception.SlotCapacityBelowConfirmedBookingsException;
 import com.temple.platform.darshan.api.SlotQuerySupport;
 import com.temple.platform.darshan.api.dto.CreateDarshanRequest;
 import com.temple.platform.darshan.api.dto.CreateDarshanSlotRequest;
@@ -15,6 +16,7 @@ import com.temple.platform.darshan.exception.InvalidSlotCapacityException;
 import com.temple.platform.darshan.exception.InvalidSlotScheduleException;
 import com.temple.platform.darshan.exception.InvalidSlotStatusTransitionException;
 import com.temple.platform.darshan.exception.OverlappingSlotException;
+import com.temple.platform.booking.repository.BookingRepository;
 import com.temple.platform.darshan.repository.DarshanRepository;
 import com.temple.platform.darshan.repository.DarshanSlotRepository;
 import com.temple.platform.temple.api.dto.PageResponse;
@@ -43,6 +45,7 @@ public class DarshanService {
     private final TempleAdminAssignmentRepository assignmentRepository;
     private final DarshanRepository darshanRepository;
     private final DarshanSlotRepository slotRepository;
+    private final BookingRepository bookingRepository;
     private final TempleAuthorizationService authorizationService;
 
     public DarshanService(
@@ -50,11 +53,13 @@ public class DarshanService {
             TempleAdminAssignmentRepository assignmentRepository,
             DarshanRepository darshanRepository,
             DarshanSlotRepository slotRepository,
+            BookingRepository bookingRepository,
             TempleAuthorizationService authorizationService) {
         this.templeRepository = templeRepository;
         this.assignmentRepository = assignmentRepository;
         this.darshanRepository = darshanRepository;
         this.slotRepository = slotRepository;
+        this.bookingRepository = bookingRepository;
         this.authorizationService = authorizationService;
     }
 
@@ -206,13 +211,23 @@ public class DarshanService {
             UpdateDarshanSlotRequest request,
             Authentication authentication) {
         authorizationService.requireTempleManagement(authentication, templeId);
-        DarshanSlot existing = requireSlotInDarshan(templeId, darshanId, slotId);
+        requireDarshanInTemple(templeId, darshanId);
+        DarshanSlot existing;
+        if (request.capacity() != null) {
+            existing = slotRepository.lockById(slotId)
+                    .filter(slot -> slot.darshanId() == darshanId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Darshan slot not found"));
+            validateCapacity(request.capacity());
+            int confirmedQuantity = bookingRepository.sumConfirmedQuantityForDarshanSlot(slotId);
+            if (request.capacity() < confirmedQuantity) {
+                throw new SlotCapacityBelowConfirmedBookingsException();
+            }
+        } else {
+            existing = requireSlotInDarshan(templeId, darshanId, slotId);
+        }
         OffsetDateTime startAt = request.startAt() != null ? request.startAt() : existing.startAt();
         OffsetDateTime endAt = request.endAt() != null ? request.endAt() : existing.endAt();
         validateSlotSchedule(startAt, endAt);
-        if (request.capacity() != null) {
-            validateCapacity(request.capacity());
-        }
         if (request.status() != null) {
             validateSlotStatusTransition(existing.status(), request.status());
         }

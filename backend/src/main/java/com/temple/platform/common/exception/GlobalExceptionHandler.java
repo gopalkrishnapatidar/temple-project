@@ -10,6 +10,13 @@ import com.temple.platform.ritual.exception.InvalidRitualCurrencyException;
 import com.temple.platform.ritual.exception.InvalidRitualDurationException;
 import com.temple.platform.ritual.exception.InvalidRitualNameException;
 import com.temple.platform.ritual.exception.InvalidRitualPriceException;
+import com.temple.platform.booking.exception.BookingConflictException;
+import com.temple.platform.booking.exception.SlotCapacityBelowConfirmedBookingsException;
+import com.temple.platform.booking.exception.IdempotencyConflictException;
+import com.temple.platform.booking.exception.InsufficientCapacityException;
+import com.temple.platform.booking.exception.InvalidBookingUpdateException;
+import com.temple.platform.booking.exception.InvalidIdempotencyKeyException;
+import com.temple.platform.ritual.exception.InvalidRitualSlotCapacityException;
 import com.temple.platform.ritual.exception.InvalidRitualSlotScheduleException;
 import com.temple.platform.ritual.exception.InvalidRitualSlotStatusTransitionException;
 import com.temple.platform.temple.exception.DuplicateAssignmentException;
@@ -24,6 +31,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -58,7 +66,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             HttpMessageNotReadableException.class,
             IllegalArgumentException.class,
-            MethodArgumentTypeMismatchException.class
+            MethodArgumentTypeMismatchException.class,
+            MissingRequestHeaderException.class
     })
     public ResponseEntity<ErrorResponse> handleBadRequest(
             Exception ex,
@@ -134,14 +143,29 @@ public class GlobalExceptionHandler {
             InvalidRitualDurationException.class,
             InvalidRitualPriceException.class,
             InvalidRitualCurrencyException.class,
+            InvalidRitualSlotCapacityException.class,
             InvalidRitualSlotScheduleException.class,
             InvalidRitualSlotStatusTransitionException.class,
-            AmbiguousSlotQueryException.class
+            AmbiguousSlotQueryException.class,
+            InvalidIdempotencyKeyException.class,
+            InvalidBookingUpdateException.class
     })
     public ResponseEntity<ErrorResponse> handleInvalidRitual(
             RuntimeException ex,
             HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler({
+            InsufficientCapacityException.class,
+            IdempotencyConflictException.class,
+            BookingConflictException.class,
+            SlotCapacityBelowConfirmedBookingsException.class
+    })
+    public ResponseEntity<ErrorResponse> handleBookingConflict(
+            RuntimeException ex,
+            HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(DuplicateEmailException.class)

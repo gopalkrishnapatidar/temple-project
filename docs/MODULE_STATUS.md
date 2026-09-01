@@ -14,9 +14,9 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 10 / 44 |
+| Completed | 11 / 44 |
 | Current Phase | Phase 1 - Application |
-| Current Module | Module 10 - Booking / Concurrency |
+| Current Module | Module 11 - Redis & Caching |
 | Current Module Status | NOT STARTED |
 
 ### Completed Modules
@@ -31,6 +31,7 @@ Cursor must update this file after completing each module.
 - [x] Module 07 - Temple & Event Management
 - [x] Module 08 - Darshan & Slot Management
 - [x] Module 09 - Havan & Puja Booking
+- [x] Module 10 - Booking / Concurrency
 
 ---
 
@@ -458,6 +459,61 @@ Full backend regression (`mvn clean test`):
 
 ---
 
+## Module 10 - Darshan Booking & Concurrency
+
+**Status:** COMPLETED
+
+### Implementation
+
+- Flyway `V8__booking_and_ritual_slot_capacity.sql` — positive `ritual_slot.capacity`; `booking` table
+- REST: `POST/GET /api/v1/bookings`, `GET/PATCH /api/v1/bookings/{bookingReference}`
+- PostgreSQL authoritative for booking and capacity truth (no derived `available_capacity`)
+- Pessimistic slot-row `SELECT … FOR UPDATE` on booking create, cancel, and Darshan/Ritual capacity updates
+- `Idempotency-Key` required on create; `(account_id, idempotency_key)` uniqueness with `ON CONFLICT DO NOTHING`
+- Darshan and Ritual slot capacity cannot be reduced below confirmed booking quantity (409)
+- Capacity equal to or above confirmed quantity allowed
+- No payments, Redis, Kafka, AWS, Kubernetes, or physical booking deletes
+
+### Database
+
+- Flyway V8 applied; `schema_version` = `8`
+- `booking`: exactly-one slot FK CHECK; `CONFIRMED`/`CANCELLED`; UNIQUE `booking_reference` and `(account_id, idempotency_key)`
+- Indexes for owner listing and confirmed quantity SUM by slot
+
+### Automated Validation
+
+`mvn clean test`
+
+| Metric | Result |
+|--------|--------|
+| Tests run | 146 |
+| Failures | 0 |
+| Errors | 0 |
+| Skipped | 0 |
+| Build | SUCCESS |
+
+Coverage includes Darshan/Ritual booking, idempotency, BOLA, capacity invariant, repository constraints, and concurrent booking/capacity races.
+
+### Manual Runtime Validation
+
+| Check | Result |
+|-------|--------|
+| Booking concurrency (no overselling) | SUCCESS |
+| Darshan capacity invariant | SUCCESS |
+| Ritual capacity invariant | SUCCESS |
+
+### Problems Encountered
+
+- `BookingRepositoryTest` PostgreSQL `25P02` after multiple constraint violations in one `@Transactional` test — fixed by isolating each DB constraint assertion in its own test method.
+- `concurrentCapacityReductionAndBookingRespectInvariant` failed with HTTP 400 when racing capacity reduction to zero — test redesigned to race valid operations (capacity 2→1 vs booking quantity 1).
+
+### Final Review
+
+- MUST FIX: NONE
+- Module 10 approved for completion
+
+---
+
 ## Implementation Artifacts by Module
 
 ### Module 00
@@ -513,6 +569,11 @@ Full backend regression (`mvn clean test`):
 - Ritual (PUJA/HAVAN) domain: Flyway V7, JDBC repositories, nested REST API, no overlap constraint
 - No booking, Redis, Kafka, payments, notifications, Docker, Kubernetes, CI/CD, or AWS
 
+### Module 10
+
+- Booking domain: Flyway V8, JDBC repository, REST API, slot-row pessimistic locking
+- No payments, Redis, Kafka, notifications, Docker, Kubernetes, CI/CD, or AWS
+
 ---
 
 ## Architecture Decisions
@@ -528,12 +589,13 @@ Full backend regression (`mvn clean test`):
 - Module 07: temple admin assignments stored relationally; resource-level authorization enforced per temple; event create status server-owned (`DRAFT`); lifecycle transitions validated on update.
 - Module 08: darshan/slot nested under temples; PostgreSQL EXCLUDE overlap for available slots; devotee visibility filters; temple-timezone date queries.
 - Module 09: PUJA and HAVAN share one `ritual` bounded context (separate from Darshan); PostgreSQL `NUMERIC` price; no same-ritual overlap constraint; slot times are scheduled boundaries independent of `durationMinutes`; current price is configuration only (no booking snapshot yet).
+- Module 10: PostgreSQL is the booking/capacity authority; pessimistic slot-row locking on booking create/cancel and capacity updates; idempotency uniqueness per account at DB; RitualSlot explicit positive capacity (V8); confirmed quantity must not exceed slot capacity.
 
 ---
 
 ## Next Module
 
-**Module 10 - Booking / Concurrency**
+**Module 11 - Redis & Caching**
 
 Status: NOT STARTED
 
@@ -556,7 +618,7 @@ Status: NOT STARTED
 - [x] Module 07 - Temple & Event Management
 - [x] Module 08 - Darshan & Slot Management
 - [x] Module 09 - Havan & Puja Booking
-- [ ] Module 10 - Darshan Booking & Concurrency
+- [x] Module 10 - Darshan Booking & Concurrency
 - [ ] Module 11 - Redis & Caching
 - [ ] Module 12 - Real-Time Availability
 - [ ] Module 13 - Payments & Donations

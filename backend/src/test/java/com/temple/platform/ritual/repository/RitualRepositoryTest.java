@@ -87,8 +87,8 @@ class RitualRepositoryTest {
         Instant middle = start.plus(Duration.ofHours(1));
         Instant end = start.plus(Duration.ofHours(2));
 
-        slotRepository.insert(ritualId, start, middle, RitualSlotStatus.AVAILABLE);
-        slotRepository.insert(ritualId, middle.minus(Duration.ofMinutes(30)), end, RitualSlotStatus.AVAILABLE);
+        slotRepository.insert(ritualId, start, middle, 10, RitualSlotStatus.AVAILABLE);
+        slotRepository.insert(ritualId, middle.minus(Duration.ofMinutes(30)), end, 10, RitualSlotStatus.AVAILABLE);
     }
 
     @Test
@@ -97,7 +97,17 @@ class RitualRepositoryTest {
         long ritualId = insertRitual(createTemple());
         Instant start = Instant.now().plus(Duration.ofDays(6));
 
-        assertThatThrownBy(() -> slotRepository.insert(ritualId, start, start, RitualSlotStatus.AVAILABLE))
+        assertThatThrownBy(() -> slotRepository.insert(ritualId, start, start, 10, RitualSlotStatus.AVAILABLE))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    @Transactional
+    void zeroCapacityRejectedByDatabase() {
+        long ritualId = insertRitual(createTemple());
+        Instant start = Instant.now().plus(Duration.ofDays(7));
+
+        assertThatThrownBy(() -> slotRepository.insert(ritualId, start, start.plus(Duration.ofHours(1)), 0, RitualSlotStatus.AVAILABLE))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 

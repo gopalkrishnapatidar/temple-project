@@ -2,6 +2,8 @@ package com.temple.platform.darshan.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.temple.platform.booking.domain.BookingStatus;
+import com.temple.platform.booking.repository.BookingRepository;
 import com.temple.platform.darshan.domain.DarshanSlotStatus;
 import com.temple.platform.darshan.domain.DarshanStatus;
 import com.temple.platform.darshan.repository.DarshanRepository;
@@ -73,6 +75,201 @@ class DarshanApiTest {
 
     @Autowired
     private DarshanSlotRepository slotRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Test
+    void capacityCannotBeReducedBelowConfirmedBookings() throws Exception {
+        String platformToken = loginAs(createAccount(AccountRole.PLATFORM_ADMIN));
+        long templeId = createTempleViaApi(platformToken);
+        long darshanId = createDarshanViaApi(platformToken, templeId, "Capacity Guard");
+        OffsetDateTime start = OffsetDateTime.now().plusDays(12);
+        MvcResult created = mockMvc.perform(post("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(slotJson(start, 5)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long slotId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+        long devoteeId = createAccount(AccountRole.DEVOTEE);
+        bookingRepository.insertIgnoringIdempotencyConflict(
+                UUID.randomUUID(),
+                devoteeId,
+                slotId,
+                null,
+                3,
+                BookingStatus.CONFIRMED,
+                UUID.randomUUID().toString()
+        );
+
+        mockMvc.perform(patch("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots/" + slotId)
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"capacity\":2}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message")
+                        .value("Slot capacity cannot be reduced below confirmed booking quantity"));
+
+        mockMvc.perform(get("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots/" + slotId)
+                        .header("Authorization", "Bearer " + platformToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.capacity").value(5));
+    }
+
+    @Test
+    void capacityCanBeReducedToConfirmedQuantity() throws Exception {
+        String platformToken = loginAs(createAccount(AccountRole.PLATFORM_ADMIN));
+        long templeId = createTempleViaApi(platformToken);
+        long darshanId = createDarshanViaApi(platformToken, templeId, "Exact Capacity");
+        OffsetDateTime start = OffsetDateTime.now().plusDays(13);
+        MvcResult created = mockMvc.perform(post("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(slotJson(start, 5)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long slotId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+        long devoteeId = createAccount(AccountRole.DEVOTEE);
+        bookingRepository.insertIgnoringIdempotencyConflict(
+                UUID.randomUUID(),
+                devoteeId,
+                slotId,
+                null,
+                3,
+                BookingStatus.CONFIRMED,
+                UUID.randomUUID().toString()
+        );
+
+        mockMvc.perform(patch("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots/" + slotId)
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"capacity\":3}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.capacity").value(3));
+    }
+
+    @Test
+    void capacityCanBeIncreasedWhenBookingsExist() throws Exception {
+        String platformToken = loginAs(createAccount(AccountRole.PLATFORM_ADMIN));
+        long templeId = createTempleViaApi(platformToken);
+        long darshanId = createDarshanViaApi(platformToken, templeId, "Increase Capacity");
+        OffsetDateTime start = OffsetDateTime.now().plusDays(14);
+        MvcResult created = mockMvc.perform(post("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(slotJson(start, 5)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long slotId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+        long devoteeId = createAccount(AccountRole.DEVOTEE);
+        bookingRepository.insertIgnoringIdempotencyConflict(
+                UUID.randomUUID(),
+                devoteeId,
+                slotId,
+                null,
+                2,
+                BookingStatus.CONFIRMED,
+                UUID.randomUUID().toString()
+        );
+
+        mockMvc.perform(patch("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots/" + slotId)
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"capacity\":8}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.capacity").value(8));
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void concurrentCapacityReductionAndBookingRespectInvariant() throws Exception {
+        String platformToken = loginAs(createAccount(AccountRole.PLATFORM_ADMIN));
+        long templeId = createTempleViaApi(platformToken);
+        long darshanId = createDarshanViaApi(platformToken, templeId, "Capacity Race");
+        OffsetDateTime start = OffsetDateTime.now().plusDays(15);
+        MvcResult created = mockMvc.perform(post("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(slotJson(start, 2)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long slotId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asLong();
+        long devoteeId = createAccount(AccountRole.DEVOTEE);
+        bookingRepository.insertIgnoringIdempotencyConflict(
+                UUID.randomUUID(),
+                devoteeId,
+                slotId,
+                null,
+                1,
+                BookingStatus.CONFIRMED,
+                UUID.randomUUID().toString()
+        );
+        String devoteeToken = loginAs(createAccount(AccountRole.DEVOTEE));
+        AtomicInteger patchStatus = new AtomicInteger();
+        AtomicInteger bookingStatus = new AtomicInteger();
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch go = new CountDownLatch(1);
+
+        try {
+            Future<?> reduce = executor.submit(() -> {
+                ready.countDown();
+                await(go);
+                try {
+                    mockMvc.perform(patch("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots/" + slotId)
+                                    .header("Authorization", "Bearer " + platformToken)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content("{\"capacity\":1}"))
+                            .andExpect(result -> patchStatus.set(result.getResponse().getStatus()));
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
+            Future<?> book = executor.submit(() -> {
+                ready.countDown();
+                await(go);
+                try {
+                    mockMvc.perform(post("/api/v1/bookings")
+                                    .header("Authorization", "Bearer " + devoteeToken)
+                                    .header("Idempotency-Key", UUID.randomUUID().toString())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content("""
+                                            {
+                                              "targetType":"DARSHAN",
+                                              "slotId":%d,
+                                              "quantity":1
+                                            }
+                                            """.formatted(slotId)))
+                            .andExpect(result -> bookingStatus.set(result.getResponse().getStatus()));
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
+            ready.await(5, TimeUnit.SECONDS);
+            go.countDown();
+            reduce.get(15, TimeUnit.SECONDS);
+            book.get(15, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
+        }
+
+        int confirmed = bookingRepository.sumConfirmedQuantityForDarshanSlot(slotId);
+        int capacity = slotRepository.findByDarshanIdAndId(darshanId, slotId).orElseThrow().capacity();
+        assertThat(confirmed).isLessThanOrEqualTo(capacity);
+
+        boolean capacityReductionWon = patchStatus.get() == 200
+                && bookingStatus.get() == 409
+                && capacity == 1
+                && confirmed == 1;
+        boolean bookingWon = patchStatus.get() == 409
+                && bookingStatus.get() == 201
+                && capacity == 2
+                && confirmed == 2;
+        assertThat(capacityReductionWon || bookingWon)
+                .as("patch=%d booking=%d capacity=%d confirmed=%d", patchStatus.get(), bookingStatus.get(), capacity, confirmed)
+                .isTrue();
+    }
 
     @Test
     void devoteeCannotCreateDarshan() throws Exception {
