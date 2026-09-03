@@ -27,8 +27,9 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -506,17 +507,20 @@ class DarshanApiTest {
                 TempleStatus.ACTIVE
         ).id();
         long darshanId = darshanRepository.insert(templeId, "Morning", null, DarshanStatus.ACTIVE).id();
-        OffsetDateTime start = OffsetDateTime.of(2026, 9, 1, 18, 30, 0, 0, ZoneOffset.UTC);
+        ZoneId kolkata = ZoneId.of("Asia/Kolkata");
+        LocalDate targetDate = LocalDate.now(kolkata).plusDays(7);
+        LocalDate previousDate = targetDate.minusDays(1);
+        OffsetDateTime start = targetDate.atStartOfDay(kolkata).toOffsetDateTime();
         OffsetDateTime end = start.plusHours(1);
         slotRepository.insert(darshanId, start, end, 50, DarshanSlotStatus.AVAILABLE);
         String devoteeToken = registerDevotee();
 
-        mockMvc.perform(get("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots?date=2026-09-02")
+        mockMvc.perform(get("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots?date=" + targetDate)
                         .header("Authorization", "Bearer " + devoteeToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1));
 
-        mockMvc.perform(get("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots?date=2026-09-01")
+        mockMvc.perform(get("/api/v1/temples/" + templeId + "/darshans/" + darshanId + "/slots?date=" + previousDate)
                         .header("Authorization", "Bearer " + devoteeToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(0));

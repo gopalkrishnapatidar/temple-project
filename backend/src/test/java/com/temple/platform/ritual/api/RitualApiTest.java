@@ -29,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -559,16 +561,19 @@ class RitualApiTest {
                 RitualCurrency.INR,
                 RitualStatus.ACTIVE
         ).id();
-        Instant start = Instant.parse("2026-09-01T18:30:00Z");
+        ZoneId kolkata = ZoneId.of("Asia/Kolkata");
+        LocalDate targetDate = LocalDate.now(kolkata).plusDays(7);
+        LocalDate previousDate = targetDate.minusDays(1);
+        Instant start = targetDate.atStartOfDay(kolkata).toInstant();
         slotRepository.insert(ritualId, start, start.plus(Duration.ofHours(1)), 10, RitualSlotStatus.AVAILABLE);
         String devoteeToken = registerDevotee();
 
-        mockMvc.perform(get("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots?date=2026-09-02")
+        mockMvc.perform(get("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots?date=" + targetDate)
                         .header("Authorization", "Bearer " + devoteeToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1));
 
-        mockMvc.perform(get("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots?date=2026-09-01")
+        mockMvc.perform(get("/api/v1/temples/" + templeId + "/rituals/" + ritualId + "/slots?date=" + previousDate)
                         .header("Authorization", "Bearer " + devoteeToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(0));
