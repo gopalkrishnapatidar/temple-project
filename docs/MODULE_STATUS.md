@@ -16,8 +16,8 @@ Cursor must update this file after completing each module.
 | Total Modules | 44 |
 | Completed | 12 / 44 |
 | Current Phase | Phase 1 - Application |
-| Current Module | Module 11 - Redis & Caching |
-| Current Module Status | COMPLETED |
+| Current Module | Module 13 - Payments & Donations |
+| Current Module Status | NOT STARTED |
 
 ### Completed Modules
 
@@ -624,11 +624,67 @@ Coverage includes Darshan/Ritual booking, idempotency, BOLA, capacity invariant,
 
 ---
 
+## Module 12 - Real-Time Availability
+
+**Status:** COMPLETED
+
+### Implementation
+
+- PostgreSQL read-time availability projection for Darshan and Ritual slots
+- Nested paginated list and slot-detail `GET .../availability` endpoints
+- `CONFIRMED` booking quantities aggregated with `LEFT JOIN` + `GROUP BY`; no per-slot N+1 SUM loop
+- `remainingCapacity` derived at read time and clamped to zero
+- `available` requires an AVAILABLE future slot with remaining capacity
+- Existing hierarchical authorization and slot visibility rules reused
+- PostgreSQL remains authoritative; no Redis availability cache, write lock, mutable availability counter, or booking write-path change
+- No new Flyway migration; existing V8 confirmed-booking partial indexes reused
+- `docs/availability/REAL_TIME_AVAILABILITY.md`
+
+### Automated Validation
+
+- `mvn compile`: SUCCESS
+- Module 12 availability suite: 18 tests, 0 failures, 0 errors
+- Timezone regression tests: 2 tests, 0 failures, 0 errors
+- Full `mvn clean test`: 178 tests, 0 failures, 0 errors, 0 skipped, BUILD SUCCESS
+
+### Manual Runtime Validation
+
+- Darshan detail: baseline, confirmed booking, cancellation, and full-capacity `available=false` verified
+- Ritual detail: baseline, confirmed booking, and cancellation restoration verified
+- Darshan availability list: pagination and aggregate values verified for controlled slots
+- Ritual availability list: pagination and aggregate values verified for controlled slot
+- Anonymous availability request returned HTTP 401
+- Cross-hierarchy/BOLA request returned HTTP 404
+- Redis/Memurai outage: availability remained functional from PostgreSQL
+- Aggregate health returned HTTP 503 while Redis was down, while readiness remained HTTP 200 / UP with PostgreSQL UP
+- Redis recovery verified after restart
+- Capacity-1 concurrency race: two concurrent bookings produced exactly one HTTP 201 CONFIRMED and one HTTP 409; cancellation restored capacity
+
+### Problems Encountered
+
+- Agent integration tests initially lacked database credentials; secure local-shell execution completed them successfully
+- Two historical fixed-date timezone fixtures were changed to dynamically future Asia/Kolkata dates; full regression then passed
+- Initial PowerShell Darshan slot timestamp lost its offset through `DateTimeOffset.Date`; offset-preserving serialization resolved HTTP 400
+- Expected 15-minute JWT expiration occurred during extended runtime verification; secure re-login restored access
+- Memurai service stop required an elevated PowerShell session
+- Redis health briefly remained unavailable immediately after service restart before recovering
+
+### Final Review
+
+- BLOCKER/HIGH findings: NONE
+- PostgreSQL authority, authorization hierarchy, concurrency safety, SQL aggregation, Redis independence, and scope boundaries reviewed
+- Non-blocking future maintainability items: duplicated visibility logic, mixed time sources, and duplicated timestamptz mapping helper
+- Module 12 approved for completion
+
+---
+
 ## Next Module
 
-**Module 12 - Real-Time Availability**
+**Module 13 - Payments & Donations**
 
 Status: NOT STARTED
+
+Do not automatically implement Module 13.
 
 ---
 
@@ -651,7 +707,7 @@ Status: NOT STARTED
 - [x] Module 09 - Havan & Puja Booking
 - [x] Module 10 - Darshan Booking & Concurrency
 - [x] Module 11 - Redis & Caching
-- [ ] Module 12 - Real-Time Availability
+- [x] Module 12 - Real-Time Availability
 - [ ] Module 13 - Payments & Donations
 - [ ] Module 14 - Notifications & Kafka
 - [ ] Module 15 - Testing & Quality Engineering
