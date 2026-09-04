@@ -66,6 +66,7 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhooks/mock").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/system/ping", "/api/v1/system/info").permitAll()
                         .requestMatchers(
                                 "/actuator/health",

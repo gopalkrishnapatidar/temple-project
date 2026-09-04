@@ -39,6 +39,9 @@ app:
     secret: ${JWT_SECRET:}
     issuer: ${JWT_ISSUER:temple-platform}
     access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
+  payment:
+    mock:
+      webhook-secret: ${MOCK_PAYMENT_WEBHOOK_SECRET:}
 
 management:
   endpoints:
