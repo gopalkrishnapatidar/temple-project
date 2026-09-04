@@ -16,6 +16,13 @@ import com.temple.platform.booking.exception.IdempotencyConflictException;
 import com.temple.platform.booking.exception.InsufficientCapacityException;
 import com.temple.platform.booking.exception.InvalidBookingUpdateException;
 import com.temple.platform.booking.exception.InvalidIdempotencyKeyException;
+import com.temple.platform.donation.exception.InvalidDonationAmountException;
+import com.temple.platform.donation.exception.InvalidDonationCurrencyException;
+import com.temple.platform.donation.exception.InvalidDonationStateTransitionException;
+import com.temple.platform.payment.exception.BookingPaymentNotSupportedException;
+import com.temple.platform.payment.exception.InvalidPaymentStateTransitionException;
+import com.temple.platform.payment.exception.InvalidWebhookSignatureException;
+import com.temple.platform.payment.exception.PaymentConflictException;
 import com.temple.platform.ritual.exception.InvalidRitualSlotCapacityException;
 import com.temple.platform.ritual.exception.InvalidRitualSlotScheduleException;
 import com.temple.platform.ritual.exception.InvalidRitualSlotStatusTransitionException;
@@ -148,7 +155,13 @@ public class GlobalExceptionHandler {
             InvalidRitualSlotStatusTransitionException.class,
             AmbiguousSlotQueryException.class,
             InvalidIdempotencyKeyException.class,
-            InvalidBookingUpdateException.class
+            com.temple.platform.payment.exception.InvalidIdempotencyKeyException.class,
+            InvalidBookingUpdateException.class,
+            InvalidDonationAmountException.class,
+            InvalidDonationCurrencyException.class,
+            InvalidDonationStateTransitionException.class,
+            BookingPaymentNotSupportedException.class,
+            InvalidWebhookSignatureException.class
     })
     public ResponseEntity<ErrorResponse> handleInvalidRitual(
             RuntimeException ex,
@@ -159,8 +172,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             InsufficientCapacityException.class,
             IdempotencyConflictException.class,
+            com.temple.platform.payment.exception.IdempotencyConflictException.class,
+            com.temple.platform.donation.exception.IdempotencyConflictException.class,
             BookingConflictException.class,
-            SlotCapacityBelowConfirmedBookingsException.class
+            SlotCapacityBelowConfirmedBookingsException.class,
+            InvalidPaymentStateTransitionException.class,
+            PaymentConflictException.class
     })
     public ResponseEntity<ErrorResponse> handleBookingConflict(
             RuntimeException ex,

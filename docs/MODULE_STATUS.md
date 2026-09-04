@@ -14,10 +14,10 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 12 / 44 |
+| Completed | 13 / 44 |
 | Current Phase | Phase 1 - Application |
 | Current Module | Module 13 - Payments & Donations |
-| Current Module Status | NOT STARTED |
+| Current Module Status | COMPLETED |
 
 ### Completed Modules
 
@@ -33,6 +33,8 @@ Cursor must update this file after completing each module.
 - [x] Module 09 - Havan & Puja Booking
 - [x] Module 10 - Booking / Concurrency
 - [x] Module 11 - Redis & Caching
+- [x] Module 12 - Real-Time Availability
+- [x] Module 13 - Payments & Donations
 
 ---
 
@@ -678,13 +680,110 @@ Coverage includes Darshan/Ritual booking, idempotency, BOLA, capacity invariant,
 
 ---
 
+## Module 13 - Payments & Donations
+
+**Status:** COMPLETED
+
+### Implementation
+
+- Flyway `V9__payments_and_donations.sql` - `donation`, `payment`, `payment_webhook_event`
+- PostgreSQL-backed booking and donation payment flows
+- Mock `PaymentProvider` with deterministic PENDING / SUCCEEDED / FAILED outcomes
+- Provider initiation idempotent by `paymentReference` with deterministic provider reference
+- Booking payment amount derived server-side from Ritual price x quantity; Darshan payment intentionally unsupported
+- Donation creation validates amount and INR currency
+- Payment read/reconciliation endpoints with resource-level authorization
+- HMAC-SHA256 webhook verification over exact raw request bytes
+- Payment state machine: `PENDING -> SUCCEEDED | FAILED`
+- Donation state machine: `PENDING -> COMPLETED | FAILED`
+- Per-account request idempotency, webhook-event idempotency, provider-reference uniqueness, and active booking-payment uniqueness
+- Donation GET returns its linked payment reference
+- Provider calls execute outside the payment-preparation DB transaction
+- `docs/payment/PAYMENTS_AND_DONATIONS.md`
+
+### Database
+
+- Flyway V9 applied successfully; `schema_version` = `9`
+- Monetary values use PostgreSQL `NUMERIC(12,2)`
+- DB constraints enforce currency, state, purpose/target integrity, donation amount, and idempotency rules
+- Partial unique index prevents multiple PENDING/SUCCEEDED payments for the same booking
+- Unique provider event IDs protect webhook processing
+- Expected duplicate webhook events use `INSERT ... ON CONFLICT DO NOTHING`
+
+### Automated Validation
+
+Full backend regression (`mvn clean test`):
+
+| Metric | Result |
+|--------|--------|
+| Tests run | 203 |
+| Failures | 0 |
+| Errors | 0 |
+| Skipped | 0 |
+| Build | SUCCESS |
+
+Additional validation:
+
+- Payment/Donation/Mock Provider suite: 25 tests, all PASS
+- Duplicate webhook focused test: PASS
+- Database status/schema tests: 6 tests, all PASS
+- Flyway V9 and application schema version 9 confirmed
+
+### Manual Runtime Validation
+
+- Application startup with PostgreSQL/Flyway V9: SUCCESS
+- Booking payment creation: SUCCESS
+- Server-authoritative Ritual booking amount: SUCCESS
+- Same idempotency key replay returned same payment: SUCCESS
+- Different idempotency key against existing active booking payment: HTTP 409
+- Donation `100.50 INR` produced PENDING donation/payment: SUCCESS
+- Donation GET returned linked payment reference: SUCCESS
+- Reconciliation preserved PENDING provider state: SUCCESS
+- Correctly signed HMAC webhook: HTTP 204
+- Payment transitioned `PENDING -> SUCCEEDED`: SUCCESS
+- Donation transitioned `PENDING -> COMPLETED`: SUCCESS
+- Duplicate identical webhook event: HTTP 204
+- Final payment/donation linkage remained correct
+
+### Problems Encountered
+
+- Duplicate webhook initially produced HTTP 500 because PostgreSQL unique violation `23505` aborted the transaction (`25P02`) even though the Java exception was caught. Fixed with `INSERT ... ON CONFLICT DO NOTHING`
+- Concurrent booking-payment creation with different idempotency keys could race on the active-payment unique index; the integrity race is translated to HTTP 409
+- Mock provider initiation was made idempotent using `paymentReference`
+- Donation GET initially omitted its linked payment reference; repository/service lookup was added
+- Mock `.50` / `.99` amount behavior was normalized to scale 2
+- Stale V8 schema-version test data was updated to V9
+- Runtime verification exposed local environment issues involving database credentials, JWT configuration, webhook-secret process inheritance, and a stale Java process on port 8080; application behavior was verified after correcting the runtime environment
+
+### Security / Reliability Review
+
+- No card/CVV data stored
+- Booking payment amount is server-authoritative
+- HMAC-SHA256 authenticates webhook requests
+- Constant-time signature comparison used
+- Payment/donation state transitions are controlled and auditable
+- Duplicate requests/provider events are idempotent
+- BOLA/resource ownership protections enforced
+- Secrets remain externalized
+- PostgreSQL remains transactional source of truth
+- No Kafka, AWS, Kubernetes, or other future-module technologies introduced
+
+### Final Review
+
+- MUST FIX: NONE
+- Full regression: 203 tests, 0 failures, 0 errors
+- End-to-end payment/donation/webhook lifecycle verified at runtime
+- Module 13 approved for completion
+
+---
+
 ## Next Module
 
-**Module 13 - Payments & Donations**
+**Module 14 - Notifications & Kafka**
 
 Status: NOT STARTED
 
-Do not automatically implement Module 13.
+Do not automatically implement Module 14.
 
 ---
 
@@ -708,7 +807,9 @@ Do not automatically implement Module 13.
 - [x] Module 10 - Darshan Booking & Concurrency
 - [x] Module 11 - Redis & Caching
 - [x] Module 12 - Real-Time Availability
-- [ ] Module 13 - Payments & Donations
+- [x] Module 13 - Payments & Donations
+- [x] Module 12 - Real-Time Availability
+- [x] Module 13 - Payments & Donations
 - [ ] Module 14 - Notifications & Kafka
 - [ ] Module 15 - Testing & Quality Engineering
 
