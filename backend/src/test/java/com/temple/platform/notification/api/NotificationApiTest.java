@@ -9,15 +9,14 @@ import com.temple.platform.notification.domain.DomainEventType;
 import com.temple.platform.notification.domain.Notification;
 import com.temple.platform.notification.domain.NotificationChannel;
 import com.temple.platform.notification.repository.NotificationRepository;
+import com.temple.platform.support.IsolatedPostgresIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,9 +28,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@IsolatedPostgresIntegrationTest
 @AutoConfigureMockMvc
-@ActiveProfiles("dev")
 @Transactional
 class NotificationApiTest {
 

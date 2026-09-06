@@ -69,7 +69,7 @@ They must be introduced according to the module roadmap.
 
 ## Backend
 
-- `backend/` — Spring Boot 3.4 (Java 21, Maven)
+- `backend/` â€” Spring Boot 3.4 (Java 21, Maven)
 - REST API base path: `/api/v1`
 - Local default: `http://localhost:8080`
 - PostgreSQL via Flyway migrations (backend only; frontend never connects to DB)
@@ -77,23 +77,24 @@ They must be introduced according to the module roadmap.
 - Local development uses `temple_app` for datasource and Flyway unless a deliberate migration-role transition is performed
 - Optional separate Flyway/DDL role (`temple_migrator`) bootstrap is reference-only in `backend/db/`
 - Flyway migrations through V10 (`outbox_event`, `notification`). V9 remains `payment`, `donation`, `payment_webhook_event`; V8 remains `booking`; V7 remains `ritual` / `ritual_slot`; V6 remains `darshan` / `darshan_slot` with overlap EXCLUDE
-- V3 fixes `updated_at` trigger: `NOW()` → `clock_timestamp()`
+- V3 fixes `updated_at` trigger: `NOW()` â†’ `clock_timestamp()`
 - Identity (Module 06): BCrypt passwords; JWT HS256 access tokens (15-minute lifetime, `JWT_SECRET` required); roles `DEVOTEE` / `TEMPLE_ADMIN` / `PLATFORM_ADMIN`
-- Temple/Event (Module 07): temples, admin assignments, events; DB-backed resource-level authorization (not JWT); public reads show `ACTIVE` temples and `PUBLISHED` events only; event create status server-owned (`DRAFT`); lifecycle transitions enforced on update (`DRAFT`→`PUBLISHED`/`CANCELLED`, `PUBLISHED`→`CANCELLED`; invalid transitions → 400)
+- Temple/Event (Module 07): temples, admin assignments, events; DB-backed resource-level authorization (not JWT); public reads show `ACTIVE` temples and `PUBLISHED` events only; event create status server-owned (`DRAFT`); lifecycle transitions enforced on update (`DRAFT`â†’`PUBLISHED`/`CANCELLED`, `PUBLISHED`â†’`CANCELLED`; invalid transitions â†’ 400)
 - Darshan/Slot (Module 08): nested `/api/v1/temples/{templeId}/darshans` and `.../slots`; `ACTIVE`/`INACTIVE` darshan; `AVAILABLE`/`CANCELLED` slots (status server-owned on create); PostgreSQL GiST EXCLUDE overlap on `[start_at,end_at)` for `AVAILABLE` slots per darshan; devotee reads require `ACTIVE` temple+darshan and `end_at > now()`; temple IANA timezone `date` queries; overlap races resolved by DB constraint (HTTP 409)
-- Ritual/Slot (Module 09, COMPLETED): Temple → Ritual (PUJA/HAVAN) → RitualSlot; `ACTIVE`/`INACTIVE` ritual; `AVAILABLE`/`CANCELLED` slots (create status server-owned); `NUMERIC`/`BigDecimal` INR only (zero allowed; negative rejected); domain/API `Instant`, PostgreSQL `TIMESTAMPTZ`, JDBC `OffsetDateTime` ↔ `Instant`; `durationMinutes` is current configuration and does not rewrite existing slots; overlapping Ritual slots allowed (no GiST EXCLUDE); `PLATFORM_ADMIN` global management; `TEMPLE_ADMIN` DB-scoped assignments; `DEVOTEE` hierarchical read (`ACTIVE` temple+ritual, non-cancelled `end_at > now()`); temple IANA `date` queries; `date` with `from`/`to` → 400; Module 10 added required positive `capacity` on RitualSlot (V8)
-- Booking (Module 10, COMPLETED): one `booking` table with nullable `darshan_slot_id` / `ritual_slot_id` and CHECK exactly one; public UUID `booking_reference`; owner from JWT only; status `CONFIRMED`/`CANCELLED` (no physical delete); PostgreSQL is authoritative for capacity (`slot.capacity − SUM(CONFIRMED quantity)`; no derived `available_capacity`); pessimistic slot-row `SELECT … FOR UPDATE` on booking create, cancel, and Darshan/Ritual capacity reduction; `Idempotency-Key` required on create, unique per account at DB (`ON CONFLICT DO NOTHING`); same key + same request returns existing booking; same key + different request → 409; capacity cannot be reduced below confirmed quantity (409); capacity equal to or above confirmed allowed; DEVOTEE creates for self; DEVOTEE reads/cancels own only (other owners → 404); `PLATFORM_ADMIN` global; `TEMPLE_ADMIN` current DB assignment only; REST `POST/GET /api/v1/bookings`, `GET/PATCH /api/v1/bookings/{bookingReference}`; no payments, Kafka, AWS, or Kubernetes
+- Ritual/Slot (Module 09, COMPLETED): Temple â†’ Ritual (PUJA/HAVAN) â†’ RitualSlot; `ACTIVE`/`INACTIVE` ritual; `AVAILABLE`/`CANCELLED` slots (create status server-owned); `NUMERIC`/`BigDecimal` INR only (zero allowed; negative rejected); domain/API `Instant`, PostgreSQL `TIMESTAMPTZ`, JDBC `OffsetDateTime` â†” `Instant`; `durationMinutes` is current configuration and does not rewrite existing slots; overlapping Ritual slots allowed (no GiST EXCLUDE); `PLATFORM_ADMIN` global management; `TEMPLE_ADMIN` DB-scoped assignments; `DEVOTEE` hierarchical read (`ACTIVE` temple+ritual, non-cancelled `end_at > now()`); temple IANA `date` queries; `date` with `from`/`to` â†’ 400; Module 10 added required positive `capacity` on RitualSlot (V8)
+- Booking (Module 10, COMPLETED): one `booking` table with nullable `darshan_slot_id` / `ritual_slot_id` and CHECK exactly one; public UUID `booking_reference`; owner from JWT only; status `CONFIRMED`/`CANCELLED` (no physical delete); PostgreSQL is authoritative for capacity (`slot.capacity âˆ’ SUM(CONFIRMED quantity)`; no derived `available_capacity`); pessimistic slot-row `SELECT â€¦ FOR UPDATE` on booking create, cancel, and Darshan/Ritual capacity reduction; `Idempotency-Key` required on create, unique per account at DB (`ON CONFLICT DO NOTHING`); same key + same request returns existing booking; same key + different request â†’ 409; capacity cannot be reduced below confirmed quantity (409); capacity equal to or above confirmed allowed; DEVOTEE creates for self; DEVOTEE reads/cancels own only (other owners â†’ 404); `PLATFORM_ADMIN` global; `TEMPLE_ADMIN` current DB assignment only; REST `POST/GET /api/v1/bookings`, `GET/PATCH /api/v1/bookings/{bookingReference}`; no payments, Kafka, AWS, or Kubernetes
 - Redis caching (Module 11, COMPLETED): optional fail-open Redis cache-aside for catalog reads only (temple id, public ACTIVE temple list, darshan id, public ACTIVE darshan list per temple, ritual id, event id); JSON values via `StringRedisTemplate`; authorization/status filtering after cache load; invalidation via `TransactionSynchronization.afterCommit()`; PostgreSQL remains authoritative; booking/capacity/availability/auth not cached; readiness depends on PostgreSQL only; local Redis via standalone `docker run` (see `docs/cache/REDIS_CACHING.md`)
-- Real-time availability (Module 12, COMPLETED): PostgreSQL read-time projection for Darshan/Ritual slots; `GET .../availability` list and `GET .../slots/{slotId}/availability`; response exposes `capacity`, `bookedQuantity` (`CONFIRMED` only), `remainingCapacity` (`max(0, capacity − booked)`), `available` (bookable now); aggregate `LEFT JOIN` + `GROUP BY` (no N+1); no Redis cache, no write locks, no booking-path changes; see `docs/availability/REAL_TIME_AVAILABILITY.md`
-- Payments & Donations (Module 13, COMPLETED): Flyway V9; `payment`, `donation`, `payment_webhook_event`; mock `PaymentProvider` only; booking payment amount derived server-side from `ritual.price × quantity` (INR); Darshan booking payment unsupported (no authoritative price); donation amount validated server-side; payment states `PENDING`/`SUCCEEDED`/`FAILED`; donation states `PENDING`/`COMPLETED`/`FAILED`; per-account `Idempotency-Key` on initiation; webhook HMAC via `MOCK_PAYMENT_WEBHOOK_SECRET`; reconciliation for pending mock payments; PostgreSQL authoritative; no Kafka/Redis payment authority/real gateways; see `docs/payment/PAYMENTS_AND_DONATIONS.md`
+- Real-time availability (Module 12, COMPLETED): PostgreSQL read-time projection for Darshan/Ritual slots; `GET .../availability` list and `GET .../slots/{slotId}/availability`; response exposes `capacity`, `bookedQuantity` (`CONFIRMED` only), `remainingCapacity` (`max(0, capacity âˆ’ booked)`), `available` (bookable now); aggregate `LEFT JOIN` + `GROUP BY` (no N+1); no Redis cache, no write locks, no booking-path changes; see `docs/availability/REAL_TIME_AVAILABILITY.md`
+- Payments & Donations (Module 13, COMPLETED): Flyway V9; `payment`, `donation`, `payment_webhook_event`; mock `PaymentProvider` only; booking payment amount derived server-side from `ritual.price Ã— quantity` (INR); Darshan booking payment unsupported (no authoritative price); donation amount validated server-side; payment states `PENDING`/`SUCCEEDED`/`FAILED`; donation states `PENDING`/`COMPLETED`/`FAILED`; per-account `Idempotency-Key` on initiation; webhook HMAC via `MOCK_PAYMENT_WEBHOOK_SECRET`; reconciliation for pending mock payments; PostgreSQL authoritative; no Kafka/Redis payment authority/real gateways; see `docs/payment/PAYMENTS_AND_DONATIONS.md`
 - Notifications & Kafka (Module 14, COMPLETED): Spring Kafka with local KRaft Kafka; transactional PostgreSQL outbox for booking confirmation/cancellation and terminal payment events; versioned domain-event envelope with stable UUID `eventId`; scheduled bounded outbox publisher; topic `temple.domain.events`; consumer group `temple-notification-consumer`; DLT `temple.domain.events.DLT`; durable consumer idempotency via unique `notification.source_event_id`; EMAIL_MOCK delivery with `PENDING`/`SENT`/`FAILED`; authenticated notification list/detail APIs with owner/BOLA protection and PLATFORM_ADMIN global listing; Kafka outage does not roll back business transactions; unpublished outbox events retry after broker recovery; PostgreSQL remains transactional authority; duplicate Kafka delivery is expected and safely deduplicated; external delivery should eventually use provider-side idempotency.
-- Public registration always creates `DEVOTEE` + `ACTIVE`; duplicate email → 409
-- `GET /api/v1/auth/me` protected; missing/invalid authentication → 401; insufficient role → 403
+- Testing & quality (Module 15, COMPLETED): Backend DB integration tests opt in via `@IsolatedPostgresIntegrationTest` (Testcontainers `postgres:16-alpine`, one JVM-scoped container); Flyway V1â€“V10 run against that disposable database. `@WebMvcTest` and unit tests do not require Docker. Kafka remains disabled in the Maven suite (`app.notification.kafka.enabled=false`). JaCoCo HTML report on `mvn verify` with no coverage gate. Frontend: `npm run lint`, `npm run typecheck`, `npm run build`.
+- Public registration always creates `DEVOTEE` + `ACTIVE`; duplicate email â†’ 409
+- `GET /api/v1/auth/me` protected; missing/invalid authentication â†’ 401; insufficient role â†’ 403
 - `GET /api/v1/system/database` requires `PLATFORM_ADMIN`; health/liveness/readiness remain public
 
 ## Frontend
 
-- `frontend/` — Next.js 15 (React 19, TypeScript, App Router)
+- `frontend/` â€” Next.js 15 (React 19, TypeScript, App Router)
 - Local default: `http://localhost:3000`
 - Backend API URL via `NEXT_PUBLIC_API_BASE_URL` (browser-visible; no secrets)
 - Server Components by default; Client Components only when interactivity requires it
@@ -354,8 +355,8 @@ Cloud cost optimization is mandatory.
 
 Preferred progression:
 
-Local Development → Docker → Docker Compose → Local Kubernetes → CI/CD →
-Temporary AWS Infrastructure → Production Simulation
+Local Development â†’ Docker â†’ Docker Compose â†’ Local Kubernetes â†’ CI/CD â†’
+Temporary AWS Infrastructure â†’ Production Simulation
 
 Use local infrastructure whenever possible.
 
@@ -383,7 +384,7 @@ PostgreSQL is the authoritative source of truth for transactional data.
 Use Flyway for database migrations.
 
 Connection pooling is HikariCP. Size `HIKARI_MAXIMUM_POOL_SIZE` so that
-(application instances × pool size) stays below PostgreSQL `max_connections`.
+(application instances Ã— pool size) stays below PostgreSQL `max_connections`.
 
 Local bootstrap scripts live in `backend/db/`. The hardened two-role script
 (`02_roles_and_grants.sql`) is reference-only; local development continues with
@@ -471,7 +472,7 @@ Testing may include:
 Tests must validate real behavior.
 Do not create meaningless tests only to increase coverage.
 
-Before completing a module: BUILD → TEST → VERIFY → UPDATE PROJECT CONTEXT
+Before completing a module: BUILD â†’ TEST â†’ VERIFY â†’ UPDATE PROJECT CONTEXT
 
 ---
 
@@ -479,7 +480,7 @@ Before completing a module: BUILD → TEST → VERIFY → UPDATE PROJECT CONTEXT
 
 When something fails, follow:
 
-ERROR → UNDERSTAND → INVESTIGATE → ROOT CAUSE → FIX → RETEST
+ERROR â†’ UNDERSTAND â†’ INVESTIGATE â†’ ROOT CAUSE â†’ FIX â†’ RETEST
 
 Do NOT:
 
@@ -522,8 +523,8 @@ Eventually use appropriate:
 
 Certificate management progression:
 
-Self-Signed Certificate → Local HTTPS → Kubernetes TLS Secret → HTTPS Ingress →
-cert-manager → Let's Encrypt → AWS ACM → AWS ALB
+Self-Signed Certificate â†’ Local HTTPS â†’ Kubernetes TLS Secret â†’ HTTPS Ingress â†’
+cert-manager â†’ Let's Encrypt â†’ AWS ACM â†’ AWS ALB
 
 Never commit private keys.
 
@@ -557,11 +558,11 @@ CI/CD should evolve progressively.
 
 Initial CI:
 
-Code → Build → Test → Security Scan → Docker Build → Image Scan
+Code â†’ Build â†’ Test â†’ Security Scan â†’ Docker Build â†’ Image Scan
 
 Later:
 
-Container Registry → GitOps → Argo CD → Kubernetes
+Container Registry â†’ GitOps â†’ Argo CD â†’ Kubernetes
 
 Use immutable artifact/image versions.
 Do not use `latest` for production deployment.
@@ -634,8 +635,8 @@ Avoid duplicate documentation.
 
 For every module:
 
-READ CONTEXT → PLAN → IMPLEMENT → TEST → TROUBLESHOOT → FIX → VERIFY →
-UPDATE PROJECT CONTEXT → COMMIT → STOP
+READ CONTEXT â†’ PLAN â†’ IMPLEMENT â†’ TEST â†’ TROUBLESHOOT â†’ FIX â†’ VERIFY â†’
+UPDATE PROJECT CONTEXT â†’ COMMIT â†’ STOP
 
 Never automatically proceed to the next module.
 
@@ -697,21 +698,21 @@ Generated code alone does NOT mean the module is complete.
 
 The architecture will evolve toward approximately:
 
-Users → Route 53 → HTTPS / TLS → AWS ACM → AWS ALB → Kubernetes / EKS →
-Ingress / Services → Frontend + Backend Pods → PostgreSQL + Redis + Kafka
+Users â†’ Route 53 â†’ HTTPS / TLS â†’ AWS ACM â†’ AWS ALB â†’ Kubernetes / EKS â†’
+Ingress / Services â†’ Frontend + Backend Pods â†’ PostgreSQL + Redis + Kafka
 
 Delivery:
 
-Developer → GitHub → GitHub Actions → Build + Test + Security →
-Container Registry → Argo CD → EKS
+Developer â†’ GitHub â†’ GitHub Actions â†’ Build + Test + Security â†’
+Container Registry â†’ Argo CD â†’ EKS
 
 Infrastructure:
 
-Terraform → AWS
+Terraform â†’ AWS
 
 Observability:
 
-Application + Infrastructure → OpenTelemetry / Prometheus / Loki → Grafana
+Application + Infrastructure â†’ OpenTelemetry / Prometheus / Loki â†’ Grafana
 
 This is the TARGET architecture.
 Do NOT implement it all at the beginning.

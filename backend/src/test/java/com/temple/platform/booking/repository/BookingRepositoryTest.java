@@ -16,12 +16,11 @@ import com.temple.platform.ritual.repository.RitualRepository;
 import com.temple.platform.ritual.repository.RitualSlotRepository;
 import com.temple.platform.temple.domain.TempleStatus;
 import com.temple.platform.temple.repository.TempleRepository;
+import com.temple.platform.support.IsolatedPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -33,8 +32,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-@ActiveProfiles("dev")
+@IsolatedPostgresIntegrationTest
 class BookingRepositoryTest {
 
     @Autowired

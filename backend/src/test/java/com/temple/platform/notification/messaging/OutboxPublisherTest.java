@@ -5,15 +5,14 @@ import com.temple.platform.notification.domain.AggregateType;
 import com.temple.platform.notification.domain.DomainEventType;
 import com.temple.platform.notification.domain.OutboxEvent;
 import com.temple.platform.notification.repository.OutboxEventRepository;
+import com.temple.platform.support.IsolatedPostgresIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -23,8 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@ActiveProfiles("dev")
+@IsolatedPostgresIntegrationTest
 class OutboxPublisherTest {
 
     @Autowired
