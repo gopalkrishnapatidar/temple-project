@@ -14,9 +14,9 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 13 / 44 |
+| Completed | 14 / 44 |
 | Current Phase | Phase 1 - Application |
-| Current Module | Module 13 - Payments & Donations |
+| Current Module | Module 14 - Notifications & Kafka |
 | Current Module Status | COMPLETED |
 
 ### Completed Modules
@@ -777,13 +777,107 @@ Additional validation:
 
 ---
 
+## Module 14 - Notifications & Kafka
+
+**Status:** COMPLETED
+
+### Implementation
+
+- Flyway `V10__notifications_and_outbox.sql` - durable `outbox_event` and `notification` tables
+- Transactional outbox integrated with booking confirmation/cancellation and terminal payment transitions
+- Kafka domain-event publishing through scheduled bounded outbox polling
+- Kafka topic `temple.domain.events` with stable aggregate-reference message keys
+- Consumer group `temple-notification-consumer`
+- Dead-letter topic `temple.domain.events.DLT` for unrecoverable events
+- Versioned event envelope with stable UUID `eventId`
+- Idempotent notification consumer using unique `source_event_id`
+- Mock email notification delivery with `PENDING`, `SENT`, and `FAILED` lifecycle
+- Notification APIs: `GET /api/v1/notifications` and `GET /api/v1/notifications/{notificationReference}`
+- DEVOTEE ownership/BOLA protection; PLATFORM_ADMIN may list all notifications
+- Kafka configuration externalized through environment variables
+- PostgreSQL remains transactional source of truth; Kafka is asynchronous event transport
+
+### Database
+
+- Flyway V10 applied successfully; `schema_version` = `10`
+- `outbox_event.event_id` is unique and created inside the same PostgreSQL transaction as the business state change
+- `notification.source_event_id` is unique for durable consumer idempotency
+- Expected duplicate events use `INSERT ... ON CONFLICT DO NOTHING`
+- Outbox tracks `published_at`, `publish_attempts`, and sanitized `last_error`
+
+### Automated Validation
+
+Full backend regression (`mvn clean test`, Kafka disabled for deterministic automated testing):
+
+| Metric | Result |
+|--------|--------|
+| Tests run | 228 |
+| Failures | 0 |
+| Errors | 0 |
+| Skipped | 0 |
+| Build | SUCCESS |
+
+Focused Module 14 suite: 25 tests, 0 failures, 0 errors.
+
+### Manual Runtime Validation
+
+- Local Apache Kafka 4.3.1 KRaft broker/controller started successfully on ports 9092/9093
+- `temple.domain.events`: 3 partitions, replication factor 1 for local development
+- `temple.domain.events.DLT`: 1 partition, replication factor 1
+- Booking confirmation created an outbox event and returned successfully
+- Scheduled publisher published the outbox event to Kafka
+- Notification consumer processed the event and persisted exactly one `SENT` EMAIL_MOCK notification
+- Owner notification API returned the generated notification
+- Consumer-group lag reached 0
+- Kafka outage did not roll back booking: business transaction succeeded and durable outbox row remained unpublished
+- Publisher retry attempts and sanitized `Kafka is unavailable` error were persisted while Kafka was unavailable
+- After Kafka restart, pending outbox event was published automatically and notification transitioned to `SENT`
+- Exact event replay produced no duplicate notification because `source_event_id` is unique
+- Deliberately malformed Kafka record was routed to DLT and confirmed by console consumer
+- Final consumer-group lag was 0
+
+### Problems Encountered
+
+- Initial V10 migration omitted the `application_metadata.schema_version = 10` update. Because the original V10 had already run locally, the local V10 tables/history entry were deliberately reset and the corrected migration reapplied rather than using Flyway repair
+- Existing schema-version tests still expected V9 and were updated to V10
+- `DomainEventProcessor` originally attempted delivery and failure persistence in one transaction; rethrow rolled back FAILED state. Processing was redesigned using separate `REQUIRES_NEW` database transactions around preparation and final status persistence, with external delivery outside the transaction
+- Focused tests initially observed historical local database rows; test setup was isolated without changing production behavior
+- PowerShell requires quoting Maven `-Dtest` expressions containing commas
+- Kafka Windows startup script depended on removed `wmic`; explicitly setting `KAFKA_HEAP_OPTS=-Xmx1G -Xms1G` bypassed that legacy detection
+- Kafka CLI emitted a non-blocking Log4j reconfiguration warning
+- Legacy `kafka.tools.GetOffsetShell` is unavailable in Kafka 4.3.1; runtime DLT verification used the console consumer instead
+
+### Reliability / Security Review
+
+- PostgreSQL-to-Kafka dual-write risk is addressed with the transactional outbox pattern
+- Business transactions do not depend on Kafka availability
+- Publisher retries unpublished events after broker recovery
+- Duplicate publication is tolerated through stable event IDs and durable consumer idempotency
+- Poison/unrecoverable events are isolated through DLT
+- Error text stored in outbox/notification records is sanitized and bounded
+- Notification ownership/BOLA protections are enforced
+- Secrets remain externalized
+- Kafka is not transactional booking/payment authority
+- Multi-instance publisher duplicate publication remains safe through consumer idempotency; publisher row claiming can be introduced later if scaling requires it
+- External notification providers should eventually support idempotency because delivery success followed by a crash before `markSent` can otherwise cause duplicate external delivery
+
+### Final Review
+
+- MUST FIX: NONE
+- Focused Module 14 tests: 25 PASS
+- Full backend regression: 228 tests, 0 failures, 0 errors
+- Real Kafka publish/consume, outage recovery, duplicate-event idempotency, DLT routing, and zero consumer lag verified
+- Module 14 approved for completion
+
+---
+
 ## Next Module
 
-**Module 14 - Notifications & Kafka**
+**Module 15 - Testing & Quality Engineering**
 
 Status: NOT STARTED
 
-Do not automatically implement Module 14.
+Do not automatically implement Module 15.
 
 ---
 
@@ -808,9 +902,7 @@ Do not automatically implement Module 14.
 - [x] Module 11 - Redis & Caching
 - [x] Module 12 - Real-Time Availability
 - [x] Module 13 - Payments & Donations
-- [x] Module 12 - Real-Time Availability
-- [x] Module 13 - Payments & Donations
-- [ ] Module 14 - Notifications & Kafka
+- [x] Module 14 - Notifications & Kafka
 - [ ] Module 15 - Testing & Quality Engineering
 
 ## Phase 2 - Containers

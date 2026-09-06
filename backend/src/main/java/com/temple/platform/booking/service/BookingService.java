@@ -18,6 +18,7 @@ import com.temple.platform.darshan.domain.DarshanSlotStatus;
 import com.temple.platform.darshan.domain.DarshanStatus;
 import com.temple.platform.darshan.repository.DarshanRepository;
 import com.temple.platform.darshan.repository.DarshanSlotRepository;
+import com.temple.platform.notification.service.DomainOutboxService;
 import com.temple.platform.ritual.domain.Ritual;
 import com.temple.platform.ritual.domain.RitualSlot;
 import com.temple.platform.ritual.domain.RitualSlotStatus;
@@ -59,6 +60,7 @@ public class BookingService {
     private final TempleRepository templeRepository;
     private final TempleAdminAssignmentRepository assignmentRepository;
     private final TempleAuthorizationService authorizationService;
+    private final DomainOutboxService domainOutboxService;
     private final Clock clock;
 
     public BookingService(
@@ -70,6 +72,7 @@ public class BookingService {
             TempleRepository templeRepository,
             TempleAdminAssignmentRepository assignmentRepository,
             TempleAuthorizationService authorizationService,
+            DomainOutboxService domainOutboxService,
             Clock clock) {
         this.bookingRepository = bookingRepository;
         this.darshanSlotRepository = darshanSlotRepository;
@@ -79,6 +82,7 @@ public class BookingService {
         this.templeRepository = templeRepository;
         this.assignmentRepository = assignmentRepository;
         this.authorizationService = authorizationService;
+        this.domainOutboxService = domainOutboxService;
         this.clock = clock;
     }
 
@@ -151,7 +155,9 @@ public class BookingService {
             return toResponse(locked);
         }
         bookingRepository.updateStatus(locked.id(), BookingStatus.CANCELLED);
-        return toResponse(bookingRepository.findById(locked.id()).orElse(locked));
+        Booking cancelled = bookingRepository.findById(locked.id()).orElse(locked);
+        domainOutboxService.enqueueBookingCancelled(cancelled);
+        return toResponse(cancelled);
     }
 
     private BookingResponse createDarshanBooking(
@@ -185,6 +191,7 @@ public class BookingService {
                     .orElseThrow(() -> new IllegalStateException("Idempotent booking not found after conflict"));
             return replayOrConflict(concurrent, BookingTargetType.DARSHAN, slotId, quantity);
         }
+        domainOutboxService.enqueueBookingConfirmed(inserted.get());
         return toResponse(inserted.get());
     }
 
@@ -219,6 +226,7 @@ public class BookingService {
                     .orElseThrow(() -> new IllegalStateException("Idempotent booking not found after conflict"));
             return replayOrConflict(concurrent, BookingTargetType.RITUAL, slotId, quantity);
         }
+        domainOutboxService.enqueueBookingConfirmed(inserted.get());
         return toResponse(inserted.get());
     }
 

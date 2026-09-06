@@ -4,6 +4,9 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -42,6 +45,18 @@ app:
   payment:
     mock:
       webhook-secret: ${MOCK_PAYMENT_WEBHOOK_SECRET:}
+  notification:
+    kafka:
+      enabled: ${NOTIFICATION_KAFKA_ENABLED:true}
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+      topic: ${KAFKA_DOMAIN_EVENTS_TOPIC:temple.domain.events}
+      dlt-topic: ${KAFKA_DOMAIN_EVENTS_DLT_TOPIC:temple.domain.events.DLT}
+      consumer-group: ${KAFKA_DOMAIN_EVENTS_CONSUMER_GROUP:temple-notification-consumer}
+      outbox-poll-interval: ${NOTIFICATION_OUTBOX_POLL_INTERVAL:5s}
+      outbox-batch-size: ${NOTIFICATION_OUTBOX_BATCH_SIZE:25}
+      consumer-max-attempts: ${NOTIFICATION_KAFKA_CONSUMER_MAX_ATTEMPTS:3}
+      consumer-backoff: ${NOTIFICATION_KAFKA_CONSUMER_BACKOFF:1s}
+      producer-ack-timeout: ${NOTIFICATION_KAFKA_PRODUCER_ACK_TIMEOUT:10s}
 
 management:
   endpoints:

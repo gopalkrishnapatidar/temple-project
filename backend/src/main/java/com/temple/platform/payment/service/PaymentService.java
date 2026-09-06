@@ -8,6 +8,7 @@ import com.temple.platform.donation.domain.Donation;
 import com.temple.platform.donation.domain.DonationStatus;
 import com.temple.platform.donation.repository.DonationRepository;
 import com.temple.platform.donation.service.DonationStateMachine;
+import com.temple.platform.notification.service.DomainOutboxService;
 import com.temple.platform.payment.api.dto.MockWebhookRequest;
 import com.temple.platform.payment.api.dto.PaymentResponse;
 import com.temple.platform.payment.domain.Payment;
@@ -58,6 +59,7 @@ public class PaymentService {
     private final PaymentProvider paymentProvider;
     private final WebhookSignatureVerifier webhookSignatureVerifier;
     private final TransactionTemplate transactionTemplate;
+    private final DomainOutboxService domainOutboxService;
 
     public PaymentService(
             PaymentRepository paymentRepository,
@@ -70,7 +72,8 @@ public class PaymentService {
             TempleAuthorizationService authorizationService,
             PaymentProvider paymentProvider,
             WebhookSignatureVerifier webhookSignatureVerifier,
-            TransactionTemplate transactionTemplate) {
+            TransactionTemplate transactionTemplate,
+            DomainOutboxService domainOutboxService) {
         this.paymentRepository = paymentRepository;
         this.webhookEventRepository = webhookEventRepository;
         this.bookingRepository = bookingRepository;
@@ -82,6 +85,7 @@ public class PaymentService {
         this.paymentProvider = paymentProvider;
         this.webhookSignatureVerifier = webhookSignatureVerifier;
         this.transactionTemplate = transactionTemplate;
+        this.domainOutboxService = domainOutboxService;
     }
 
     public PaymentResponse initiateBookingPayment(
@@ -256,10 +260,16 @@ public class PaymentService {
         PaymentStateMachine.requireTransition(payment.status(), targetStatus);
         if (payment.status() != targetStatus) {
             paymentRepository.updateStatus(payment.id(), targetStatus);
+            Payment updated = paymentRepository.findById(payment.id()).orElseThrow();
+            syncDonationStatus(updated);
+            if (targetStatus == PaymentStatus.SUCCEEDED || targetStatus == PaymentStatus.FAILED) {
+                domainOutboxService.enqueuePaymentStatusChange(updated);
+            }
+            return toResponse(updated);
         }
-        Payment updated = paymentRepository.findById(payment.id()).orElseThrow();
-        syncDonationStatus(updated);
-        return toResponse(updated);
+        Payment current = paymentRepository.findById(payment.id()).orElseThrow();
+        syncDonationStatus(current);
+        return toResponse(current);
     }
 
     private void syncDonationStatus(Payment payment) {
