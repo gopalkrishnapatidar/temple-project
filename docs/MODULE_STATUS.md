@@ -14,9 +14,9 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 14 / 44 |
+| Completed | 15 / 44 |
 | Current Phase | Phase 1 - Application |
-| Current Module | Module 14 - Notifications & Kafka |
+| Current Module | Module 15 - Testing & Quality Engineering |
 | Current Module Status | COMPLETED |
 
 ### Completed Modules
@@ -54,7 +54,7 @@ Use only: `NOT STARTED`, `IN PROGRESS`, `BLOCKED`, `TESTING`, `COMPLETED`
 - Dependencies: Web, Validation, Actuator, JDBC, Flyway, PostgreSQL driver
 - `GET /api/v1/system/ping`, `GET /api/v1/system/info`
 - Actuator: health, liveness, readiness (health and info exposed only)
-- Flyway `V1__baseline.sql` — `application_metadata` table
+- Flyway `V1__baseline.sql` â€” `application_metadata` table
 - Global JSON error handler; no stack traces to clients
 - `backend/.env.example`; password via `SPRING_DATASOURCE_PASSWORD` only
 - `docs/backend/BACKEND_FOUNDATION.md`
@@ -84,9 +84,9 @@ Use only: `NOT STARTED`, `IN PROGRESS`, `BLOCKED`, `TESTING`, `COMPLETED`
 
 | Endpoint | Result |
 |----------|--------|
-| `GET /api/v1/system/ping` | SUCCESS — status UP |
-| `GET /api/v1/system/info` | SUCCESS — application `temple-platform`, version `0.0.1-SNAPSHOT`, active profile `dev` |
-| `GET /actuator/health` | UP — PostgreSQL database health UP |
+| `GET /api/v1/system/ping` | SUCCESS â€” status UP |
+| `GET /api/v1/system/info` | SUCCESS â€” application `temple-platform`, version `0.0.1-SNAPSHOT`, active profile `dev` |
+| `GET /actuator/health` | UP â€” PostgreSQL database health UP |
 | `GET /actuator/health/liveness` | UP |
 | `GET /actuator/health/readiness` | UP |
 
@@ -119,7 +119,7 @@ None.
 
 | Metric | Result |
 |--------|--------|
-| ESLint | PASS — no warnings or errors |
+| ESLint | PASS â€” no warnings or errors |
 | Production build | SUCCESS |
 | Type check (build) | PASS |
 
@@ -127,11 +127,11 @@ None.
 
 | Check | Result |
 |-------|--------|
-| `npm run dev` | SUCCESS — served on `http://localhost:3000` |
+| `npm run dev` | SUCCESS â€” served on `http://localhost:3000` |
 | Home page title/content | SUCCESS |
-| Backend status section (backend stopped) | SUCCESS — controlled unavailable message shown |
-| `GET http://localhost:8080/api/v1/system/ping` | NOT TESTED — backend not running in agent environment |
-| Backend status success state | NOT TESTED — requires running Spring Boot backend |
+| Backend status section (backend stopped) | SUCCESS â€” controlled unavailable message shown |
+| `GET http://localhost:8080/api/v1/system/ping` | NOT TESTED â€” backend not running in agent environment |
+| Backend status success state | NOT TESTED â€” requires running Spring Boot backend |
 
 ### Problems Encountered
 
@@ -148,8 +148,8 @@ None.
 
 - Explicit HikariCP pool settings (env-overridable); leak detection on in `dev`, off in `prod`
 - Optional Flyway credentials (`SPRING_FLYWAY_USERNAME` / `SPRING_FLYWAY_PASSWORD`)
-- Flyway `V2__database_engineering.sql` — `updated_at` trigger, CHECK constraints
-- Flyway `V3__fix_application_metadata_updated_at_timestamp.sql` — `clock_timestamp()` trigger fix
+- Flyway `V2__database_engineering.sql` â€” `updated_at` trigger, CHECK constraints
+- Flyway `V3__fix_application_metadata_updated_at_timestamp.sql` â€” `clock_timestamp()` trigger fix
 - JDBC `ApplicationMetadataRepository` and `GET /api/v1/system/database`
 - Local bootstrap SQL: `backend/db/01_create_database.sql`, `backend/db/02_roles_and_grants.sql` (reference-only)
 - `docs/database/DATABASE_ENGINEERING.md`
@@ -185,7 +185,7 @@ None.
 | Application startup | SUCCESS |
 | `GET /api/v1/system/ping` | SUCCESS |
 | `GET /api/v1/system/info` | SUCCESS |
-| `GET /api/v1/system/database` | SUCCESS — `schemaVersion` `3`, `flywayVersion` `3` |
+| `GET /api/v1/system/database` | SUCCESS â€” `schemaVersion` `3`, `flywayVersion` `3` |
 | `GET /actuator/health` | UP |
 
 ### Direct PostgreSQL Validation (`psql`)
@@ -212,13 +212,13 @@ None.
 
 ### Implementation
 
-- Flyway `V4__account.sql` — `account` table with unique normalized email and role/status CHECKs
+- Flyway `V4__account.sql` â€” `account` table with unique normalized email and role/status CHECKs
 - Spring Security filter chain (stateless JWT, default deny)
-- `POST /api/v1/auth/register` — public; always creates `DEVOTEE` + `ACTIVE`; duplicate email → 409; client cannot self-assign admin role
-- `POST /api/v1/auth/login` — public; BCrypt authentication; generic invalid-credentials response
-- `GET /api/v1/auth/me` — protected; identity from JWT `sub` / SecurityContext only
+- `POST /api/v1/auth/register` â€” public; always creates `DEVOTEE` + `ACTIVE`; duplicate email â†’ 409; client cannot self-assign admin role
+- `POST /api/v1/auth/login` â€” public; BCrypt authentication; generic invalid-credentials response
+- `GET /api/v1/auth/me` â€” protected; identity from JWT `sub` / SecurityContext only
 - JWT HS256 access tokens (`JWT_SECRET` required, no insecure production default); 15-minute lifetime
-- Missing/invalid/expired/tampered token → 401; insufficient role → 403
+- Missing/invalid/expired/tampered token â†’ 401; insufficient role â†’ 403
 - `GET /api/v1/system/database` and `/actuator/info` require `PLATFORM_ADMIN`
 - Public: register, login, ping, info, health/liveness/readiness
 - Authorization probes: `/api/v1/internal/temple-admin`, `/api/v1/internal/platform-admin`
@@ -245,15 +245,15 @@ None.
 
 | Check | Result |
 |-------|--------|
-| Registration → `DEVOTEE` / `ACTIVE` | SUCCESS |
-| Duplicate registration | SUCCESS — 409 |
-| Self-assigned `PLATFORM_ADMIN` in JSON | SUCCESS — still `DEVOTEE` |
-| Valid login → JWT (900s expiry) | SUCCESS |
+| Registration â†’ `DEVOTEE` / `ACTIVE` | SUCCESS |
+| Duplicate registration | SUCCESS â€” 409 |
+| Self-assigned `PLATFORM_ADMIN` in JSON | SUCCESS â€” still `DEVOTEE` |
+| Valid login â†’ JWT (900s expiry) | SUCCESS |
 | `GET /api/v1/auth/me` with valid token | SUCCESS |
-| Missing JWT | SUCCESS — 401 JSON |
-| `DEVOTEE` → `GET /api/v1/system/database` | SUCCESS — 403 JSON |
-| `GET /actuator/health` (no auth) | SUCCESS — UP |
-| Wrong password / unknown user login | SUCCESS — 401 |
+| Missing JWT | SUCCESS â€” 401 JSON |
+| `DEVOTEE` â†’ `GET /api/v1/system/database` | SUCCESS â€” 403 JSON |
+| `GET /actuator/health` (no auth) | SUCCESS â€” UP |
+| Wrong password / unknown user login | SUCCESS â€” 401 |
 
 ### Problems Encountered
 
@@ -268,11 +268,11 @@ None.
 
 ### Implementation
 
-- Flyway `V5__temple_and_event.sql` — `temple`, `temple_admin_assignment`, `temple_event`
+- Flyway `V5__temple_and_event.sql` â€” `temple`, `temple_admin_assignment`, `temple_event`
 - Temple CRUD (create `PLATFORM_ADMIN` only; update assigned `TEMPLE_ADMIN` or `PLATFORM_ADMIN`)
-- Temple admin assignment management (`PLATFORM_ADMIN` only; duplicate → 409)
+- Temple admin assignment management (`PLATFORM_ADMIN` only; duplicate â†’ 409)
 - Temple event CRUD with bounded pagination (default 20, max 100); safe page-offset validation
-- Event create status server-owned — always `DRAFT`; lifecycle transitions enforced on update
+- Event create status server-owned â€” always `DRAFT`; lifecycle transitions enforced on update
 - Centralized `TempleAuthorizationService` for resource-level checks (assignments from DB, not JWT)
 - Public read visibility: `ACTIVE` temples and `PUBLISHED` events only for `DEVOTEE`
 - `docs/temple/TEMPLE_AND_EVENT_MANAGEMENT.md`
@@ -299,10 +299,10 @@ None.
 | Check | Result |
 |-------|--------|
 | Event create defaults to `DRAFT` | SUCCESS |
-| `DRAFT` → `PUBLISHED` transition | SUCCESS |
-| `PUBLISHED` → `DRAFT` rejected | SUCCESS — HTTP 400 |
-| Invalid schedule (`endAt` ≤ `startAt`) | SUCCESS — HTTP 400, message `Event end time must be after start time` |
-| DB-backed authorization after assignment removal | SUCCESS — existing `TEMPLE_ADMIN` JWT immediately receives HTTP 403 |
+| `DRAFT` â†’ `PUBLISHED` transition | SUCCESS |
+| `PUBLISHED` â†’ `DRAFT` rejected | SUCCESS â€” HTTP 400 |
+| Invalid schedule (`endAt` â‰¤ `startAt`) | SUCCESS â€” HTTP 400, message `Event end time must be after start time` |
+| DB-backed authorization after assignment removal | SUCCESS â€” existing `TEMPLE_ADMIN` JWT immediately receives HTTP 403 |
 
 ### Problems Encountered
 
@@ -318,10 +318,10 @@ None.
 
 ### Implementation
 
-- Flyway `V6__darshan_and_slot.sql` — `darshan`, `darshan_slot`, overlap EXCLUDE constraint (`btree_gist`)
+- Flyway `V6__darshan_and_slot.sql` â€” `darshan`, `darshan_slot`, overlap EXCLUDE constraint (`btree_gist`)
 - Darshan CRUD nested under temples; slot CRUD nested under darshans
 - Darshan lifecycle: `ACTIVE` / `INACTIVE`; slot lifecycle: `AVAILABLE` / `CANCELLED` (create defaults server-owned)
-- Reuses `TempleAuthorizationService` and DB-backed temple assignment checks; nested Temple → Darshan → Slot BOLA protection
+- Reuses `TempleAuthorizationService` and DB-backed temple assignment checks; nested Temple â†’ Darshan â†’ Slot BOLA protection
 - Devotee visibility: `ACTIVE` temple + `ACTIVE` darshan; non-cancelled slots with `end_at > now()`
 - Slot listing: temple-timezone `date` filter, optional `from`/`to` instant range (max 90 days), pagination
 - No booking, Redis, Kafka, payments, notifications, or real-time capacity engine
@@ -329,7 +329,7 @@ None.
 ### Database
 
 - Flyway V6 applied; `schema_version` = `6`
-- FK `darshan.temple_id` → `temple`, `darshan_slot.darshan_id` → `darshan`
+- FK `darshan.temple_id` â†’ `temple`, `darshan_slot.darshan_id` â†’ `darshan`
 - CHECK: `capacity > 0`, `end_at > start_at`, status enums
 - GiST EXCLUDE on `tstzrange(start_at, end_at, '[)')` for `AVAILABLE` slots per `darshan_id` (adjacent allowed; `CANCELLED` excluded from overlap set)
 - Reuses `set_updated_at()` trigger (`clock_timestamp()`)
@@ -350,22 +350,22 @@ None.
 
 | Check | Result |
 |-------|--------|
-| `GET /actuator/health` | UP — PostgreSQL UP |
+| `GET /actuator/health` | UP â€” PostgreSQL UP |
 | `PLATFORM_ADMIN` creates `ACTIVE` darshan | SUCCESS |
 | `AVAILABLE` slot creation | SUCCESS |
 | Adjacent slots | SUCCESS |
-| Overlapping slot | SUCCESS — HTTP 409, business error (no raw DB leak) |
+| Overlapping slot | SUCCESS â€” HTTP 409, business error (no raw DB leak) |
 | Temple-timezone `date` slot query | SUCCESS |
 | `DEVOTEE` read | SUCCESS |
-| `DEVOTEE` slot create | SUCCESS — HTTP 403 |
-| Cross-temple darshan BOLA | SUCCESS — HTTP 404 |
-| Cross-darshan slot BOLA | SUCCESS — HTTP 404 |
+| `DEVOTEE` slot create | SUCCESS â€” HTTP 403 |
+| Cross-temple darshan BOLA | SUCCESS â€” HTTP 404 |
+| Cross-darshan slot BOLA | SUCCESS â€” HTTP 404 |
 | Slot cancellation | SUCCESS |
 | `PLATFORM_ADMIN` sees `CANCELLED` history | SUCCESS |
 | `DEVOTEE` does not see `CANCELLED` slot | SUCCESS |
-| `capacity=0` | SUCCESS — HTTP 400 |
-| `endAt <= startAt` | SUCCESS — HTTP 400 |
-| Expired JWT | SUCCESS — HTTP 401; re-login restored access |
+| `capacity=0` | SUCCESS â€” HTTP 400 |
+| `endAt <= startAt` | SUCCESS â€” HTTP 400 |
+| Expired JWT | SUCCESS â€” HTTP 401; re-login restored access |
 
 ### Problems Encountered
 
@@ -380,22 +380,22 @@ None.
 
 ### Implementation
 
-- Flyway `V7__ritual_and_slot.sql` — `ritual`, `ritual_slot` (no overlap EXCLUDE)
-- Shared Ritual bounded context: Temple → Ritual (PUJA/HAVAN) → RitualSlot
+- Flyway `V7__ritual_and_slot.sql` â€” `ritual`, `ritual_slot` (no overlap EXCLUDE)
+- Shared Ritual bounded context: Temple â†’ Ritual (PUJA/HAVAN) â†’ RitualSlot
 - Ritual lifecycle: `ACTIVE` / `INACTIVE`; slot lifecycle: `AVAILABLE` / `CANCELLED` (create defaults server-owned)
 - `durationMinutes` is current offering configuration; existing slot `startAt`/`endAt` are not rewritten
 - `price` is `NUMERIC(12,2)` / `BigDecimal`; currency `INR` only; zero allowed; negative rejected
 - Domain/API absolute timestamps are `Instant`; PostgreSQL `TIMESTAMPTZ`; JDBC maps via `OffsetDateTime`
-- Temple-local `date` queries use IANA ZoneId `[startOfDay, nextStartOfDay)`; `date` combined with `from`/`to` → 400
+- Temple-local `date` queries use IANA ZoneId `[startOfDay, nextStartOfDay)`; `date` combined with `from`/`to` â†’ 400
 - Overlapping Ritual slots intentionally allowed (no Darshan-style GiST EXCLUDE)
 - Authorization: `PLATFORM_ADMIN` global; `TEMPLE_ADMIN` DB assignment only; `DEVOTEE` hierarchical read
-- Nested Temple → Ritual → Slot BOLA → 404
+- Nested Temple â†’ Ritual â†’ Slot BOLA â†’ 404
 - No booking, capacity, priest/hall assignment, Redis, Kafka, payments, or notifications
 
 ### Database
 
 - Flyway V7 applied; `schema_version` = `7`
-- FK `ritual.temple_id` → `temple`, `ritual_slot.ritual_id` → `ritual` (`ON DELETE RESTRICT`)
+- FK `ritual.temple_id` â†’ `temple`, `ritual_slot.ritual_id` â†’ `ritual` (`ON DELETE RESTRICT`)
 - CHECK: type PUJA/HAVAN, duration > 0, price >= 0, currency INR, statuses, `end_at > start_at`
 - Reuses `set_updated_at()` trigger (`clock_timestamp()`)
 - Indexes: `(temple_id, type, status)` on `ritual`; `(ritual_id, start_at, id)` on `ritual_slot`
@@ -431,26 +431,26 @@ Full backend regression (`mvn clean test`):
 | PUJA / HAVAN create | SUCCESS |
 | Type filter PUJA / HAVAN | SUCCESS |
 | Ritual slot create | SUCCESS |
-| Overlapping Ritual slots | SUCCESS — both created |
+| Overlapping Ritual slots | SUCCESS â€” both created |
 | Temple-local date filter | SUCCESS |
-| Invalid duration, price, schedule, currency | SUCCESS — HTTP 400 |
-| Ambiguous `date` + `from`/`to` | SUCCESS — HTTP 400 |
+| Invalid duration, price, schedule, currency | SUCCESS â€” HTTP 400 |
+| Ambiguous `date` + `from`/`to` | SUCCESS â€” HTTP 400 |
 | DEVOTEE read | SUCCESS |
-| DEVOTEE write | SUCCESS — HTTP 403 |
-| Cross-Temple Ritual BOLA | SUCCESS — HTTP 404 |
-| Cross-Ritual Slot BOLA | SUCCESS — HTTP 404 |
-| Slot AVAILABLE → CANCELLED | SUCCESS |
+| DEVOTEE write | SUCCESS â€” HTTP 403 |
+| Cross-Temple Ritual BOLA | SUCCESS â€” HTTP 404 |
+| Cross-Ritual Slot BOLA | SUCCESS â€” HTTP 404 |
+| Slot AVAILABLE â†’ CANCELLED | SUCCESS |
 | Admin sees CANCELLED history | SUCCESS |
 | DEVOTEE does not see CANCELLED slot | SUCCESS |
-| CANCELLED → AVAILABLE | SUCCESS — HTTP 400 |
-| Ritual ACTIVE → INACTIVE | SUCCESS |
+| CANCELLED â†’ AVAILABLE | SUCCESS â€” HTTP 400 |
+| Ritual ACTIVE â†’ INACTIVE | SUCCESS |
 | Admin sees INACTIVE Ritual | SUCCESS |
-| DEVOTEE INACTIVE Ritual / its slots | SUCCESS — HTTP 404 |
-| Expired JWT | SUCCESS — HTTP 401; re-login restored access |
+| DEVOTEE INACTIVE Ritual / its slots | SUCCESS â€” HTTP 404 |
+| Expired JWT | SUCCESS â€” HTTP 401; re-login restored access |
 
 ### Problems Encountered
 
-- PostgreSQL JDBC does not support `ResultSet.getObject(..., Instant.class)` for `timestamptz`. Repository maps `OffsetDateTime` ↔ `Instant`; domain/API remain `Instant`.
+- PostgreSQL JDBC does not support `ResultSet.getObject(..., Instant.class)` for `timestamptz`. Repository maps `OffsetDateTime` â†” `Instant`; domain/API remain `Instant`.
 - Java Instant nanoseconds vs PostgreSQL microsecond `TIMESTAMPTZ` rounded a test fixture; the duration-independence assertion was kept (deterministic microsecond Instant).
 - DST API fixture `2026-03-08` was already past; DEVOTEE correctly hid ended slots. Fixture moved to future America/New_York spring-forward `2027-03-14`.
 
@@ -468,10 +468,10 @@ Full backend regression (`mvn clean test`):
 
 ### Implementation
 
-- Flyway `V8__booking_and_ritual_slot_capacity.sql` — positive `ritual_slot.capacity`; `booking` table
+- Flyway `V8__booking_and_ritual_slot_capacity.sql` â€” positive `ritual_slot.capacity`; `booking` table
 - REST: `POST/GET /api/v1/bookings`, `GET/PATCH /api/v1/bookings/{bookingReference}`
 - PostgreSQL authoritative for booking and capacity truth (no derived `available_capacity`)
-- Pessimistic slot-row `SELECT … FOR UPDATE` on booking create, cancel, and Darshan/Ritual capacity updates
+- Pessimistic slot-row `SELECT â€¦ FOR UPDATE` on booking create, cancel, and Darshan/Ritual capacity updates
 - `Idempotency-Key` required on create; `(account_id, idempotency_key)` uniqueness with `ON CONFLICT DO NOTHING`
 - Darshan and Ritual slot capacity cannot be reduced below confirmed booking quantity (409)
 - Capacity equal to or above confirmed quantity allowed
@@ -507,8 +507,8 @@ Coverage includes Darshan/Ritual booking, idempotency, BOLA, capacity invariant,
 
 ### Problems Encountered
 
-- `BookingRepositoryTest` PostgreSQL `25P02` after multiple constraint violations in one `@Transactional` test — fixed by isolating each DB constraint assertion in its own test method.
-- `concurrentCapacityReductionAndBookingRespectInvariant` failed with HTTP 400 when racing capacity reduction to zero — test redesigned to race valid operations (capacity 2→1 vs booking quantity 1).
+- `BookingRepositoryTest` PostgreSQL `25P02` after multiple constraint violations in one `@Transactional` test â€” fixed by isolating each DB constraint assertion in its own test method.
+- `concurrentCapacityReductionAndBookingRespectInvariant` failed with HTTP 400 when racing capacity reduction to zero â€” test redesigned to race valid operations (capacity 2â†’1 vs booking quantity 1).
 
 ### Final Review
 
@@ -554,7 +554,7 @@ Coverage includes Darshan/Ritual booking, idempotency, BOLA, capacity invariant,
 
 ### Module 05
 
-- Database engineering: HikariCP, Flyway V1–V3, optional migrator role (reference-only), JDBC metadata API
+- Database engineering: HikariCP, Flyway V1â€“V3, optional migrator role (reference-only), JDBC metadata API
 - No auth, temple/event APIs, booking, Redis, Kafka, Docker, Kubernetes, CI/CD, or AWS
 
 ### Module 06
@@ -581,7 +581,7 @@ Coverage includes Darshan/Ritual booking, idempotency, BOLA, capacity invariant,
 
 ## Architecture Decisions
 
-- Start as a modular monolith (frontend → backend → PostgreSQL).
+- Start as a modular monolith (frontend â†’ backend â†’ PostgreSQL).
 - Do not start with microservices.
 - PostgreSQL is the transactional source of truth.
 - Defer Redis, Kafka, Docker, Kubernetes, CI/CD, AWS, Terraform, and
@@ -871,13 +871,64 @@ Focused Module 14 suite: 25 tests, 0 failures, 0 errors.
 
 ---
 
+## Module 15 - Testing & Quality Engineering
+
+**Status:** COMPLETED
+
+Implementation and independent local validation completed successfully.
+
+### Implementation
+
+- Testcontainers PostgreSQL (`postgres:16-alpine`) shared for the Maven JVM; one disposable database per test run
+- `IsolatedPostgres` + `IsolatedPostgresInitializer` + `@IsolatedPostgresIntegrationTest` apply Testcontainers datasource/Flyway at context startup for opted-in integration tests only (production datasource unchanged)
+- Existing `@SpringBootTest` DB integration tests migrated to `@IsolatedPostgresIntegrationTest`; `@WebMvcTest` and unit tests unchanged
+- Flyway V1â€“V10 applied to the test container; `application_metadata.schema_version` = 10
+- JaCoCo agent + HTML report on `verify`; bootstrap `TemplePlatformApplication` excluded from the report; no minimum coverage percentage
+- Frontend `typecheck` script added (`tsc --noEmit`); `lint` and `build` already existed
+- No CI/CD workflows, Docker production images, Kafka broker in the Maven suite, or H2
+
+### Quality commands
+
+| Purpose | Command |
+|---------|---------|
+| Backend tests | `mvn test` (from `backend/`) |
+| Backend verify + coverage | `mvn clean verify` (from `backend/`; report `target/site/jacoco/index.html`) |
+| Frontend lint | `npm run lint` (from `frontend/`) |
+| Frontend type check | `npm run typecheck` (from `frontend/`) |
+| Frontend production build | `npm run build` (from `frontend/`) |
+
+### Automated Validation
+
+Focused implementation checks (agent environment):
+
+| Check | Result |
+|-------|--------|
+| `mvn test-compile` | SUCCESS |
+| `mvn -Dtest=JwtPropertiesTest,MockPaymentProviderTest test` | 7 tests, 0 failures |
+| `mvn -Dtest=FlywayMigrationQualityTest,NotificationSchemaRepositoryTest,ApplicationMetadataRepositoryTest,BookingRepositoryTest test` | 18 errors â€” Docker engine not available in agent shell (`Could not find a valid Docker environment`) |
+| `npm run typecheck` (frontend) | SUCCESS |
+
+Independent local validation completed: `FlywayMigrationQualityTest` — 3 tests, 0 failures, 0 errors; `mvn clean verify` — BUILD SUCCESS; JaCoCo HTML report generated successfully with 206 classes analyzed; frontend `lint` — SUCCESS with no warnings/errors; `typecheck` — SUCCESS; production `build` — SUCCESS. Initial Docker/Testcontainers validation failed because Testcontainers 1.20.6 attempted an unsupported Docker API against Docker Engine 29; upgrading to Testcontainers 2.0.5 resolved the compatibility issue.
+
+### Known limitations
+
+- Backend tests that use `@IsolatedPostgresIntegrationTest` require a working Docker engine for Testcontainers.
+- `@WebMvcTest` slice tests and pure unit tests do not require Docker.
+- Maven suite does not start a real Kafka broker.
+
+### Final Review
+
+- COMPLETED — backend regression, isolated PostgreSQL/Flyway validation, JaCoCo reporting, frontend lint/typecheck/build, and final implementation review passed.
+
+---
+
 ## Next Module
 
-**Module 15 - Testing & Quality Engineering**
+**Module 16 - Docker Fundamentals & Production Images**
 
 Status: NOT STARTED
 
-Do not automatically implement Module 15.
+Do not automatically implement Module 16.
 
 ---
 
@@ -903,7 +954,7 @@ Do not automatically implement Module 15.
 - [x] Module 12 - Real-Time Availability
 - [x] Module 13 - Payments & Donations
 - [x] Module 14 - Notifications & Kafka
-- [ ] Module 15 - Testing & Quality Engineering
+- [ ] Module 15 - Testing & Quality Engineering (TESTING â€” pending independent final validation)
 
 ## Phase 2 - Containers
 

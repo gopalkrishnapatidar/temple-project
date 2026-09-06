@@ -9,15 +9,14 @@ import com.temple.platform.notification.domain.Notification;
 import com.temple.platform.notification.domain.NotificationStatus;
 import com.temple.platform.notification.exception.UnrecoverableDomainEventException;
 import com.temple.platform.notification.repository.NotificationRepository;
+import com.temple.platform.support.IsolatedPostgresIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-@ActiveProfiles("dev")
+@IsolatedPostgresIntegrationTest
 class DomainEventProcessorTest {
 
     @Autowired

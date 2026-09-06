@@ -2,12 +2,11 @@ package com.temple.platform.identity.repository;
 
 import com.temple.platform.identity.domain.AccountRole;
 import com.temple.platform.identity.domain.AccountStatus;
+import com.temple.platform.support.IsolatedPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -15,8 +14,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-@ActiveProfiles("dev")
+@IsolatedPostgresIntegrationTest
 class AccountRepositoryTest {
 
     @Autowired

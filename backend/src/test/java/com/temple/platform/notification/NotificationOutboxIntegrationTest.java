@@ -18,13 +18,12 @@ import com.temple.platform.ritual.repository.RitualRepository;
 import com.temple.platform.ritual.repository.RitualSlotRepository;
 import com.temple.platform.temple.domain.TempleStatus;
 import com.temple.platform.temple.repository.TempleRepository;
+import com.temple.platform.support.IsolatedPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,9 +41,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@IsolatedPostgresIntegrationTest
 @AutoConfigureMockMvc
-@ActiveProfiles("dev")
 @Transactional
 class NotificationOutboxIntegrationTest {
 

@@ -8,12 +8,11 @@ import com.temple.platform.notification.domain.DomainEventType;
 import com.temple.platform.notification.domain.NotificationChannel;
 import com.temple.platform.notification.domain.NotificationStatus;
 import com.temple.platform.platform.repository.ApplicationMetadataRepository;
+import com.temple.platform.support.IsolatedPostgresIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -21,8 +20,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-@ActiveProfiles("dev")
+@IsolatedPostgresIntegrationTest
 class NotificationSchemaRepositoryTest {
 
     @Autowired
