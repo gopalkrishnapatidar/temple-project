@@ -3,7 +3,7 @@ import type { PingResponse, PingResult } from "./types";
 const DEFAULT_API_BASE_URL = "http://localhost:8080";
 
 export function getApiBaseUrl(): string {
-  const configuredBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  const configuredBaseUrl = process.env.BACKEND_API_BASE_URL?.trim();
 
   if (!configuredBaseUrl) {
     return DEFAULT_API_BASE_URL;
