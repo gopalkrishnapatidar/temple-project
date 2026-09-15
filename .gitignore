@@ -41,3 +41,4 @@ crash.log
 # Temporary files
 tmp/
 temp/
+.env
