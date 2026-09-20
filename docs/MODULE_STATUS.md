@@ -14,9 +14,9 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 15 / 44 |
-| Current Phase | Phase 1 - Application |
-| Current Module | Module 15 - Testing & Quality Engineering |
+| Completed | 18 / 44 |
+| Current Phase | Phase 2 - Containers |
+| Current Module | Module 17 - Docker Compose & Local Production Stack |
 | Current Module Status | COMPLETED |
 
 ### Completed Modules
@@ -35,6 +35,10 @@ Cursor must update this file after completing each module.
 - [x] Module 11 - Redis & Caching
 - [x] Module 12 - Real-Time Availability
 - [x] Module 13 - Payments & Donations
+- [x] Module 14 - Notifications & Kafka
+- [x] Module 15 - Testing & Quality Engineering
+- [x] Module 16 - Docker Fundamentals & Production Images
+- [x] Module 17 - Docker Compose & Local Production Stack
 
 ---
 
@@ -921,14 +925,182 @@ Independent local validation completed: `FlywayMigrationQualityTest` — 3 tests
 - COMPLETED — backend regression, isolated PostgreSQL/Flyway validation, JaCoCo reporting, frontend lint/typecheck/build, and final implementation review passed.
 
 ---
+## Module 16 - Docker Fundamentals & Production Images
 
+**Status:** COMPLETED
+
+### Implementation
+
+- Backend production image uses a multi-stage Maven/Java 21 build so Maven and build tooling are not carried into the runtime image.
+- Backend runtime uses a lightweight JRE Alpine image and executes as non-root user `app`.
+- Frontend production image uses a multi-stage Node.js 22 Alpine build with Next.js standalone output.
+- Frontend runtime executes as non-root user `nextjs` with UID 1001.
+- Docker build contexts are constrained using `.dockerignore`.
+- Runtime configuration and secrets remain externalized rather than embedded into container images.
+- Docker Compose foundation defines PostgreSQL, Redis, Kafka, backend, and frontend services.
+- PostgreSQL uses the named volume `temple-postgres-data` for persistent database storage.
+- Backend resource controls include `cpus: 1.0` and `mem_limit: 768m`.
+- Backend uses bounded Docker `json-file` logging with `max-size: 10m` and `max-file: 3`.
+- Healthchecks are configured for infrastructure and application services.
+- Required Compose secrets/configuration use required-variable interpolation instead of insecure runtime defaults.
+- Backend and frontend containers remain stateless and replaceable.
+
+### Runtime / Image Validation
+
+| Check | Result |
+|-------|--------|
+| Backend image build | SUCCESS |
+| Frontend image build | SUCCESS |
+| Backend non-root runtime | CONFIRMED |
+| Frontend non-root runtime | CONFIRMED |
+| Backend HTTP service | SUCCESS |
+| Frontend HTTP service | SUCCESS |
+| PostgreSQL connectivity | SUCCESS |
+| Redis connectivity | SUCCESS |
+| Kafka connectivity | SUCCESS |
+| Docker Compose stack startup | SUCCESS |
+| Healthchecks | SUCCESS |
+| PostgreSQL named-volume persistence | CONFIRMED |
+| Backend CPU/memory controls | CONFIRMED |
+| Backend bounded logging | CONFIRMED |
+
+### Security / Reliability Review
+
+- Build-time tooling is separated from runtime images through multi-stage builds.
+- Application containers do not require root execution.
+- Secrets remain externalized and `.env` is excluded from source control.
+- PostgreSQL, Redis, and Kafka do not require host-port publication for application-to-service communication.
+- PostgreSQL is persistent while backend/frontend remain replaceable.
+- Redis is treated as cache infrastructure rather than transactional storage.
+- Kafka is local single-node infrastructure at this stage and is not a production HA design.
+- Additional container security hardening is intentionally deferred to Module 18.
+
+### Final Review
+
+- MUST FIX: NONE
+- Production-oriented Docker image foundation: PASS
+- Non-root execution: PASS
+- Runtime configuration externalization: PASS
+- Compose foundation: PASS
+- Module 16 approved for completion
+
+---
+
+## Module 17 - Docker Compose & Local Production Stack
+
+**Status:** COMPLETED
+
+### Implementation / Architecture Review
+
+- Existing Module 16 Compose foundation was retained after Module 17 production-gap analysis; no unnecessary rewrite was introduced.
+- Multi-container stack consists of frontend, backend, PostgreSQL, Redis, and Kafka.
+- Compose service DNS is used for container-to-container communication.
+- Only frontend (`3000`) and backend (`8080`) are published to the host.
+- PostgreSQL uses named volume `temple-postgres-data`.
+- Redis remains an intentionally disposable cache.
+- Kafka remains an intentionally disposable single-node KRaft broker for local development.
+- Backend is constrained to `1.0` CPU and `768m` memory.
+- Backend bounded `json-file` logging is retained.
+- Health-based startup dependencies were verified.
+- PostgreSQL is readiness-critical.
+- Redis is intentionally excluded from readiness.
+- Kafka remains asynchronous infrastructure and is not an Actuator readiness dependency.
+- No confirmed Compose implementation defect remained after Module 17 testing.
+
+### Runtime Validation
+
+| Check | Result |
+|-------|--------|
+| `docker compose config --quiet` | SUCCESS - exit code 0 |
+| Backend container | HEALTHY |
+| Frontend container | HEALTHY |
+| PostgreSQL container | HEALTHY |
+| Redis container | HEALTHY |
+| Kafka container | HEALTHY |
+| Backend aggregate health | HTTP 200 |
+| Backend readiness | HTTP 200 |
+| Backend liveness | HTTP 200 |
+| Frontend | HTTP 200 |
+| PostgreSQL | accepting connections |
+| Redis | PONG |
+| Kafka topic `temple.domain.events` | CONFIRMED |
+| Backend non-root execution | CONFIRMED |
+| Frontend non-root execution | CONFIRMED |
+| Backend CPU/memory cgroup limits | CONFIRMED |
+| PostgreSQL volume persistence | CONFIRMED |
+
+### Controlled Failure Testing
+
+- Redis outage: backend remained running; aggregate health returned HTTP 503 while readiness remained HTTP 200 as designed.
+- Redis recovery: container/DNS/TCP connectivity was verified; Spring/Lettuce recovered without backend restart.
+- PostgreSQL outage: backend remained alive but readiness returned HTTP 503 as designed.
+- PostgreSQL recovery: backend recovered after database restart.
+- Kafka outage: backend remained alive; Kafka client connection/DNS failures were observed and the client recovered after broker restoration.
+- Backend termination test produced exit code 137 with `OOMKilled=false`, confirming that exit 137 alone does not prove an OOM condition.
+- `restart: unless-stopped` behavior was reviewed during explicit operator-directed container termination.
+- Final full-stack health returned to green after failure testing.
+
+### Production Gap Analysis
+
+#### Confirmed Defects
+
+- NONE.
+
+#### Intentional Local Architecture
+
+- PostgreSQL is the persistent transactional source of truth.
+- Redis is a disposable cache.
+- Kafka is local single-node disposable infrastructure.
+- Backend/frontend are stateless and replaceable.
+- PostgreSQL participates in readiness; Redis/Kafka do not based on current business semantics.
+
+#### Hardening Opportunities
+
+- Standardize bounded container logging across frontend, PostgreSQL, Redis, and Kafka.
+- Continue graceful-shutdown validation.
+- Add richer dependency and business telemetry in later observability modules.
+
+#### Future Architecture
+
+- Kubernetes orchestration and rolling deployments.
+- Multi-node/high-availability architecture.
+- Production Kafka persistence, replication, ISR, and disaster recovery.
+- Vault/AWS Secrets Manager or equivalent production secret management.
+- Prometheus/Grafana and centralized logging.
+- OpenTelemetry tracing.
+- Production load/capacity engineering.
+- Backup and disaster recovery architecture.
+
+### Problems Encountered / Learning
+
+- Host `5432` and `6379` listeners were native Windows services rather than Docker-published PostgreSQL/Redis ports.
+- Frontend healthcheck required explicit `127.0.0.1` rather than `localhost`.
+- Redis temporarily remained DOWN in Spring health after infrastructure recovery but subsequently recovered through the client connection lifecycle.
+- `docker compose ps -q backend` returned no ID after backend exit; `ps -a` or a previously captured container ID was required for post-exit inspection.
+- Exit code 137 was correctly distinguished from OOM by checking `OOMKilled=false` and the known operator action.
+- Docker resource configuration was verified through both Docker inspection and Linux cgroup values.
+- Idle resource observations were not used to invent arbitrary production limits.
+
+### Final Review
+
+- MUST FIX: NONE
+- Compose validation: PASS
+- Full stack: HEALTHY
+- Controlled dependency failure/recovery testing: PASS
+- Persistence validation: PASS
+- Networking/service-discovery validation: PASS
+- Resource-limit validation: PASS
+- Security/non-root validation: PASS
+- Module 17 approved for completion
+
+---
 ## Next Module
 
-**Module 16 - Docker Fundamentals & Production Images**
+**Module 18 - Container Security & Optimization**
 
 Status: NOT STARTED
 
-Do not automatically implement Module 16.
+Do not automatically implement Module 18.
 
 ---
 
@@ -954,12 +1126,12 @@ Do not automatically implement Module 16.
 - [x] Module 12 - Real-Time Availability
 - [x] Module 13 - Payments & Donations
 - [x] Module 14 - Notifications & Kafka
-- [ ] Module 15 - Testing & Quality Engineering (TESTING â€” pending independent final validation)
+- [x] Module 15 - Testing & Quality Engineering
 
 ## Phase 2 - Containers
 
-- [ ] Module 16 - Docker Fundamentals & Production Images
-- [ ] Module 17 - Docker Compose & Local Production Stack
+- [x] Module 16 - Docker Fundamentals & Production Images
+- [x] Module 17 - Docker Compose & Local Production Stack
 - [ ] Module 18 - Container Security & Optimization
 
 ## Phase 3 - Kubernetes
