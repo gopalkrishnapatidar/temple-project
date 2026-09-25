@@ -64,8 +64,19 @@ services:
       context: ./backend
       dockerfile: Dockerfile
 
-    image: temple-backend:module16
+    image: temple-backend:module18-security-remediated
     restart: unless-stopped
+
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    read_only: true
+
+    tmpfs:
+      - /tmp
 
     cpus: 1.0
     mem_limit: 768m
@@ -116,6 +127,17 @@ services:
       dockerfile: Dockerfile
     image: temple-frontend:module16
     restart: unless-stopped
+
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    read_only: true
+
+    cpus: 0.5
+    mem_limit: 256m
 
     ports:
       - "3000:3000"

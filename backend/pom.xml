@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.4</version>
+        <version>3.5.16</version>
         <relativePath/>
     </parent>
 
@@ -21,6 +21,13 @@
         <java.version>21</java.version>
         <jacoco.version>0.8.12</jacoco.version>
         <testcontainers.version>2.0.5</testcontainers.version>
+
+        <!-- Module 18 security remediation -->
+        <tomcat.version>10.1.60</tomcat.version>
+        <netty.version>4.1.137.Final</netty.version>
+        <postgresql.version>42.7.12</postgresql.version>
+        <jackson-bom.version>2.21.5</jackson-bom.version>
+        <log4j2.version>2.25.5</log4j2.version>
     </properties>
 
     <dependencyManagement>
@@ -32,6 +39,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- Module 18 security remediation -->
+            <!-- Module 18 security remediation -->
+<dependency>
+    <groupId>at.yawk.lz4</groupId>
+    <artifactId>lz4-java</artifactId>
+    <version>1.11.1</version>
+</dependency>
         </dependencies>
     </dependencyManagement>
 
