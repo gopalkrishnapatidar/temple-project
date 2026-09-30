@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: temple
+  labels:
+    app.kubernetes.io/part-of: temple-platform
+    app.kubernetes.io/managed-by: temple-project
