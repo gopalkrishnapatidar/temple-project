@@ -1,0 +1,79 @@
+# Minimal backend Deployment for Module 19 graceful termination and PDB validation.
+# Requires a local image (see compose.yml) and a Secret with runtime env (no secrets in git).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temple-backend
+  namespace: temple
+  labels:
+    app.kubernetes.io/name: temple-platform
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: temple-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: temple-platform
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: temple-platform
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: temple-platform
+    spec:
+      priorityClassName: temple-critical
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: backend
+          image: temple-backend:module18-security-remediated
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: dev
+          envFrom:
+            - secretRef:
+                name: temple-backend-env
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 768Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

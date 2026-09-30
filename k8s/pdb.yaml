@@ -1,0 +1,17 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: temple-backend-pdb
+  namespace: temple
+  labels:
+    app.kubernetes.io/name: temple-platform
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: temple-platform
+spec:
+  # Single-replica local deployments can still be drained; scale replicas and
+  # raise minAvailable for meaningful HA protection during voluntary disruption.
+  minAvailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: temple-platform
+      app.kubernetes.io/component: backend
