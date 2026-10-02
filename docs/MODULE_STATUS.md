@@ -14,10 +14,10 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 19 / 44 |
+| Completed | 20 / 44 |
 | Current Phase | Phase 3 - Kubernetes |
 | Current Module | Module 20 - Kubernetes Networking & Ingress |
-| Current Module Status | NOT STARTED |
+| Current Module Status | COMPLETED |
 
 ### Completed Modules
 
@@ -84,6 +84,35 @@ Cursor must update this file after completing each module.
 - PDB `minAvailable: 0` is intentional for one-replica local clusters; increase replicas and tighten PDB for HA drills
 - Backend Deployment is minimal (no Service/Ingress/ConfigMap stack); Modules 20+ extend networking and configuration
 - DaemonSet uses pause (not a logging/metrics platform)
+
+---
+
+## Module 20 - Kubernetes Networking & Ingress
+
+**Status:** COMPLETED
+
+Independent local Kubernetes validation completed successfully: Services and EndpointSlices, CoreDNS service discovery, frontend-to-backend HTTP, ingress-nginx routing, end-to-end frontend/backend status, backend and frontend Pod recreation, wrong-selector/no-endpoint failure, invalid-DNS failure, wrong-targetPort connection failure, broken-Ingress-backend detection, server-side dry-runs, security/resource regression checks, and repository integrity checks all passed.
+
+### Implementation
+
+- `k8s/backend-service.yaml` — ClusterIP `temple-backend`, port `http` 8080 → container port `http` (8080); selector matches the backend Deployment
+- `k8s/frontend-deployment.yaml` — `temple-frontend`, 1 replica, image `temple-frontend:module16` (`IfNotPresent`), container port 3000, `BACKEND_API_BASE_URL=http://temple-backend:8080`, UID/GID 1001, read-only root, probes on existing `GET /`
+- `k8s/frontend-service.yaml` — ClusterIP `temple-frontend`, port `http` 3000 → container port `http` (3000)
+- `k8s/ingress.yaml` — Ingress `temple`, `networking.k8s.io/v1`, `ingressClassName: nginx`, host `temple.local`, path `/` Prefix to Service `temple-frontend` port `http`; HTTP only
+
+### Runtime prerequisites
+
+- Frontend image must already be present for the Docker Desktop Kubernetes node: `docker build -t temple-frontend:module16 ./frontend` (same tag as `compose.yml`). This repository does not load or import the image.
+- Backend image and Secret `temple-backend-env` remain the Module 19 prerequisites. PostgreSQL, Redis, and Kafka are still outside the cluster; the backend Pod cannot become Ready without them.
+- Docker Desktop Kubernetes does not include an Ingress controller. Install ingress-nginx separately so class `nginx` exists. Do not add the controller manifests to `k8s/`.
+- Local validation used `kubectl port-forward -n ingress-nginx service/ingress-nginx-controller 8088:80` because the ingress-nginx LoadBalancer external IP remained `<pending>`. Requests to `http://127.0.0.1:8088/` with host `temple.local` successfully exercised the Ingress route. No TLS listener is configured.
+
+### Intentionally deferred
+
+- TLS, certificates, cert-manager, and HTTPS Ingress — Module 26
+- NetworkPolicy, RBAC, ServiceAccount hardening, and ConfigMap/Secret configuration design — Module 21
+- Helm, HPA, persistent storage, StatefulSets, AWS load balancers, and Argo CD — later modules
+- Browser-direct `/api` Ingress path — current frontend calls the backend only from the server
 
 ---
 
@@ -1143,9 +1172,9 @@ Independent local validation completed: `FlywayMigrationQualityTest` — 3 tests
 
 **Module 20 - Kubernetes Networking & Ingress**
 
-Status: NOT STARTED
+Status: COMPLETED
 
-Do not automatically implement Module 20.
+Independent implementation validation completed. Do not start Module 21 until Module 20 implementation Git/PR closeout and learning-repository documentation are complete.
 
 ---
 
@@ -1182,7 +1211,7 @@ Do not automatically implement Module 20.
 ## Phase 3 - Kubernetes
 
 - [x] Module 19 - Kubernetes Fundamentals
-- [ ] Module 20 - Kubernetes Networking & Ingress
+- [x] Module 20 - Kubernetes Networking & Ingress
 - [ ] Module 21 - Kubernetes Configuration & Security
 - [ ] Module 22 - Kubernetes Storage & Stateful Workloads
 - [ ] Module 23 - Helm
