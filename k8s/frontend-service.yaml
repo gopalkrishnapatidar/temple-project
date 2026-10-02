@@ -1,0 +1,20 @@
+# ClusterIP Service for the temple-frontend Deployment.
+apiVersion: v1
+kind: Service
+metadata:
+  name: temple-frontend
+  namespace: temple
+  labels:
+    app.kubernetes.io/name: temple-platform
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: temple-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: temple-platform
+    app.kubernetes.io/component: frontend
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      protocol: TCP
