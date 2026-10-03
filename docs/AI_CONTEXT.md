@@ -723,6 +723,17 @@ Do NOT implement it all at the beginning.
 
 ---
 
+# 26A. Module 22 - Kubernetes Storage & Stateful Workloads
+
+Status: COMPLETED
+
+Module 22 added an isolated `temple-stateful-storage` StatefulSet and headless Service without migrating PostgreSQL, Redis, or Kafka into Kubernetes. The StatefulSet uses `volumeClaimTemplates` with a `128Mi` `ReadWriteOnce` claim dynamically provisioned by the cluster's default `standard` StorageClass and mounted at `/data`.
+
+Validation proved PVC/PV binding, stable StatefulSet ordinal identity and DNS, persistent data across explicit Pod deletion, Pod-template rollout, scale-down to zero, and scale-up to one. The PVC remained Bound through workload removal and the original data remained available after recreation.
+
+The demo container runs non-root with a read-only root filesystem while `/data` remains writable. `automountServiceAccountToken: false` prevents unnecessary Kubernetes API credentials from being mounted. PVC deletion/reclaim execution, production cloud storage, backups, snapshots, and disaster recovery were intentionally not implemented in this module.
+
+---
 # 27. Final AI Instruction
 
 Act as a senior implementation assistant for this repository.
