@@ -22,6 +22,7 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: temple-platform
     spec:
+      serviceAccountName: temple-backend
       priorityClassName: temple-critical
       terminationGracePeriodSeconds: 30
       containers:
@@ -31,10 +32,9 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-          env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: dev
           envFrom:
+            - configMapRef:
+                name: temple-backend-config
             - secretRef:
                 name: temple-backend-env
           livenessProbe:

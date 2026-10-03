@@ -1,0 +1,28 @@
+# Non-sensitive backend runtime configuration for Kubernetes.
+# Credentials remain in Secret temple-backend-env (not committed).
+# The Kubernetes node joins the Compose network so backend Pods can reach the existing dependencies by Compose DNS names.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: temple-backend-config
+  namespace: temple
+  labels:
+    app.kubernetes.io/name: temple-platform
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: temple-platform
+data:
+  SPRING_PROFILES_ACTIVE: dev
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/temple
+  HIKARI_MAXIMUM_POOL_SIZE: "10"
+  HIKARI_MINIMUM_IDLE: "2"
+  CACHE_ENABLED: "true"
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_TIMEOUT: 200ms
+  JWT_ISSUER: temple-platform
+  JWT_ACCESS_TOKEN_TTL: 15m
+  NOTIFICATION_KAFKA_ENABLED: "true"
+  KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  KAFKA_DOMAIN_EVENTS_TOPIC: temple.domain.events
+  KAFKA_DOMAIN_EVENTS_DLT_TOPIC: temple.domain.events.DLT
+  KAFKA_DOMAIN_EVENTS_CONSUMER_GROUP: temple-notification-consumer

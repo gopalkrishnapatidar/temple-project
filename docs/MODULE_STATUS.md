@@ -14,9 +14,9 @@ Cursor must update this file after completing each module.
 |-------|-------|
 | Project | Temple Digital Services Platform |
 | Total Modules | 44 |
-| Completed | 20 / 44 |
+| Completed | 21 / 44 |
 | Current Phase | Phase 3 - Kubernetes |
-| Current Module | Module 20 - Kubernetes Networking & Ingress |
+| Current Module | Module 21 - Kubernetes Configuration & Security |
 | Current Module Status | COMPLETED |
 
 ### Completed Modules
@@ -116,6 +116,70 @@ Independent local Kubernetes validation completed successfully: Services and End
 
 ---
 
+## Module 21 - Kubernetes Configuration & Security
+
+**Status:** COMPLETED
+
+Independent local Kubernetes validation completed successfully. ConfigMap/Secret separation, dedicated ServiceAccounts, RBAC least privilege, NetworkPolicy enforcement, workload recreation, and end-to-end application connectivity were verified.
+
+### Implementation
+
+- `k8s/backend-configmap.yaml` — `temple-backend-config`: non-sensitive Spring, Redis, and Kafka runtime configuration; JDBC, Redis, and Kafka use the existing Compose DNS names (`postgres`, `redis`, `kafka`) through the Kubernetes node's established attachment to the Compose network
+- `k8s/frontend-configmap.yaml` — `temple-frontend-config`: `BACKEND_API_BASE_URL=http://temple-backend:8080`
+- `k8s/serviceaccounts.yaml` — dedicated `temple-backend` and `temple-frontend` ServiceAccounts with `automountServiceAccountToken: false`
+- `k8s/networkpolicy.yaml` — frontend ingress from ingress-nginx controller Pods; frontend egress to backend TCP 8080 and kube-system DNS TCP/UDP 53; backend ingress from frontend TCP 8080 only; backend egress remains unrestricted for external PostgreSQL, Redis, and Kafka
+- `k8s/backend-deployment.yaml` — uses `serviceAccountName: temple-backend` and `envFrom` ConfigMap followed by the existing runtime Secret; inline `SPRING_PROFILES_ACTIVE` removed
+- `k8s/frontend-deployment.yaml` — uses `serviceAccountName: temple-frontend` and `envFrom` ConfigMap; inline `BACKEND_API_BASE_URL` removed
+
+### Secret boundary
+
+- No Secret manifest is committed to Git.
+- The validated runtime Secret `temple-backend-env` contains only `JWT_SECRET`, `SPRING_DATASOURCE_PASSWORD`, and `SPRING_DATASOURCE_USERNAME`.
+- Non-sensitive deployment configuration is supplied by ConfigMaps. Secret values were not printed or committed during final validation.
+
+### RBAC
+
+- No Role or RoleBinding was added because neither application requires Kubernetes API access.
+- `kubectl auth can-i` confirmed denial for Pods, Secrets, and ConfigMaps for both dedicated ServiceAccounts: all 6 checks returned `no`.
+- Effective Pod configuration confirmed no projected ServiceAccount API-token volume or `/var/run/secrets/kubernetes.io/serviceaccount` mount.
+
+### NetworkPolicy
+
+- Baseline unrelated test Pod could reach backend readiness before NetworkPolicy enforcement.
+- After applying NetworkPolicy, the same unrelated Pod-to-backend request timed out, confirming enforcement by the local cluster networking implementation.
+- Authorized frontend-to-backend traffic remained allowed.
+- Frontend DNS resolution remained functional through the explicit kube-system DNS egress rule.
+- ingress-nginx controller traffic to the frontend remained allowed.
+- Backend egress is intentionally unrestricted because PostgreSQL, Redis, and Kafka remain outside Kubernetes in the local Compose environment.
+
+### Validation Results
+
+- ConfigMaps, ServiceAccounts, NetworkPolicies, and updated Deployments applied successfully
+- Backend and frontend Pods used their dedicated ServiceAccounts with no automatic Kubernetes API token mount
+- RBAC least privilege: 6/6 `kubectl auth can-i` checks returned `no`
+- Unauthorized unrelated Pod → backend: reachable before NetworkPolicy; blocked by timeout after policy activation
+- Authorized frontend → backend readiness: HTTP 200 with PostgreSQL UP
+- Frontend DNS resolution of `temple-backend`: SUCCESS
+- ingress-nginx controller → frontend Pod: HTTP 200
+- External `temple.local` Ingress path through local port-forward: HTTP 200
+- Backend Pod deletion/recreation: replacement Ready with 0 restarts; configuration and readiness revalidated
+- Frontend Pod deletion/recreation: replacement Ready with 0 restarts; frontend → backend and external Ingress paths revalidated
+- Final Kubernetes server-side dry-run: SUCCESS for all Module 21 resources
+- `git diff --check`: PASS
+- Repository Kubernetes manifests contain no committed `kind: Secret`
+
+### Intentionally Deferred
+
+- Secret-management integrations such as External Secrets or Vault
+- Backend egress allowlisting for external dependency addresses; local Docker/Compose addressing is not treated as a stable production allowlist
+- Persistent storage and StatefulSets — Module 22
+- Helm — Module 23
+- HPA — Module 24
+- Production load balancing — Module 25
+- TLS/cert-manager — Module 26
+- High availability architecture — Module 27
+
+---
 ## Module Status Values
 
 Use only: `NOT STARTED`, `IN PROGRESS`, `BLOCKED`, `TESTING`, `COMPLETED`
@@ -1212,7 +1276,7 @@ Independent implementation validation completed. Do not start Module 21 until Mo
 
 - [x] Module 19 - Kubernetes Fundamentals
 - [x] Module 20 - Kubernetes Networking & Ingress
-- [ ] Module 21 - Kubernetes Configuration & Security
+- [x] Module 21 - Kubernetes Configuration & Security
 - [ ] Module 22 - Kubernetes Storage & Stateful Workloads
 - [ ] Module 23 - Helm
 - [ ] Module 24 - Kubernetes Scalability
