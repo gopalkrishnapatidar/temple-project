@@ -1,0 +1,20 @@
+# Headless Service: stable DNS (pod-name.service) for the Module 22 StatefulSet pods.
+apiVersion: v1
+kind: Service
+metadata:
+  name: temple-stateful-storage
+  namespace: temple
+  labels:
+    app.kubernetes.io/name: temple-platform
+    app.kubernetes.io/component: stateful-storage
+    app.kubernetes.io/part-of: temple-platform
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: temple-platform
+    app.kubernetes.io/component: stateful-storage
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
