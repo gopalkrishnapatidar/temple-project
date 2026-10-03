@@ -23,6 +23,7 @@ spec:
         app.kubernetes.io/component: frontend
         app.kubernetes.io/part-of: temple-platform
     spec:
+      serviceAccountName: temple-frontend
       terminationGracePeriodSeconds: 15
       containers:
         - name: frontend
@@ -31,9 +32,9 @@ spec:
           ports:
             - name: http
               containerPort: 3000
-          env:
-            - name: BACKEND_API_BASE_URL
-              value: http://temple-backend:8080
+          envFrom:
+            - configMapRef:
+                name: temple-frontend-config
           livenessProbe:
             httpGet:
               path: /

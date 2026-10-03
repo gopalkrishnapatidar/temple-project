@@ -1,0 +1,12 @@
+# Non-sensitive frontend runtime configuration for Kubernetes.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: temple-frontend-config
+  namespace: temple
+  labels:
+    app.kubernetes.io/name: temple-platform
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: temple-platform
+data:
+  BACKEND_API_BASE_URL: http://temple-backend:8080
