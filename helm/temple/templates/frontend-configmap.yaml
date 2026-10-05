@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: temple-frontend-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "temple.frontend.labels" . | nindent 4 }}
+data:
+{{- range $key, $value := .Values.frontend.config }}
+  {{ $key }}: {{ $value | quote }}
+{{- end }}
