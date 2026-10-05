@@ -734,6 +734,17 @@ Validation proved PVC/PV binding, stable StatefulSet ordinal identity and DNS, p
 The demo container runs non-root with a read-only root filesystem while `/data` remains writable. `automountServiceAccountToken: false` prevents unnecessary Kubernetes API credentials from being mounted. PVC deletion/reclaim execution, production cloud storage, backups, snapshots, and disaster recovery were intentionally not implemented in this module.
 
 ---
+# 26B. Module 23 - Helm Package Management
+
+Status: COMPLETED
+
+Module 23 added the Helm application chart at `helm/temple`. Release `temple` manages exactly nine existing stateless resources: backend/frontend ConfigMaps, ServiceAccounts, Deployments, Services, and the Ingress. Stable application/component selectors remain independent of Helm release identity. The runtime Secret `temple-backend-env`, Namespace, PriorityClass, PDB, NetworkPolicies, ingress-nginx, Module 19 auxiliary workloads, Module 22 StatefulSet/storage resources, and PostgreSQL/Redis/Kafka remain outside the Helm release. Raw Kubernetes manifests are retained as historical/reference manifests and must not be blindly reapplied over Helm-managed resources.
+
+The existing resources were adopted with Helm 4 `--take-ownership`. A subsequent server-side-apply upgrade exposed historical `kubectl-client-side-apply` ownership of frontend `.spec.replicas`; failed revisions were retained in Helm history and rollback recovered the release. One controlled `--force-conflicts` upgrade migrated that conflicting field to Helm without resource replacement. A subsequent normal upgrade with `forceConflicts=false` succeeded, proving the force operation was migration-only rather than a routine deployment requirement.
+
+Final release revision 6 is deployed with backend and frontend at `1/1`, no user-supplied value overrides, all nine intended resources Helm-owned, excluded resources outside Helm, and Module 22 persistent data intact. HPA, production load balancing, TLS/cert-manager, high availability, CI/CD, GitOps, registry, and EKS work remain deferred to their later modules.
+
+---
 # 27. Final AI Instruction
 
 Act as a senior implementation assistant for this repository.

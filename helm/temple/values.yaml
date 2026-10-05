@@ -1,0 +1,53 @@
+backend:
+  replicaCount: 1
+  image:
+    repository: temple-backend
+    tag: module18-security-remediated
+    pullPolicy: IfNotPresent
+  existingSecret: temple-backend-env
+  config:
+    SPRING_PROFILES_ACTIVE: dev
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/temple
+    HIKARI_MAXIMUM_POOL_SIZE: "10"
+    HIKARI_MINIMUM_IDLE: "2"
+    CACHE_ENABLED: "true"
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+    REDIS_TIMEOUT: 200ms
+    JWT_ISSUER: temple-platform
+    JWT_ACCESS_TOKEN_TTL: 15m
+    NOTIFICATION_KAFKA_ENABLED: "true"
+    KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    KAFKA_DOMAIN_EVENTS_TOPIC: temple.domain.events
+    KAFKA_DOMAIN_EVENTS_DLT_TOPIC: temple.domain.events.DLT
+    KAFKA_DOMAIN_EVENTS_CONSUMER_GROUP: temple-notification-consumer
+  resources:
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: temple-frontend
+    tag: module16
+    pullPolicy: IfNotPresent
+  config:
+    BACKEND_API_BASE_URL: http://temple-backend:8080
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: temple.local
+  path: /
+  pathType: Prefix
