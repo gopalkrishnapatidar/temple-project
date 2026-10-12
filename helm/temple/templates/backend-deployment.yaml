@@ -6,7 +6,10 @@ metadata:
   labels:
     {{- include "temple.backend.labels" . | nindent 4 }}
 spec:
+  {{- if not .Values.backend.autoscaling.enabled }}
+  {{- /* Static replica count when HPA is off. When HPA is on, omit replicas so the autoscaler owns scale; live enable/disable may need ownership verification under Helm 4 server-side apply. */}}
   replicas: {{ .Values.backend.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "temple.backend.selectorLabels" . | nindent 6 }}
@@ -32,6 +35,13 @@ spec:
                 name: temple-backend-config
             - secretRef:
                 name: {{ .Values.backend.existingSecret }}
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 18
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness

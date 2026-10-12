@@ -1,5 +1,10 @@
 backend:
   replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 60
   image:
     repository: temple-backend
     tag: module18-security-remediated

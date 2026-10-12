@@ -1,0 +1,26 @@
+{{- if .Values.backend.autoscaling.enabled }}
+{{- if gt (int .Values.backend.autoscaling.minReplicas) (int .Values.backend.autoscaling.maxReplicas) }}
+{{- fail "backend.autoscaling.minReplicas must be less than or equal to backend.autoscaling.maxReplicas" }}
+{{- end }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: temple-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "temple.backend.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: temple-backend
+  minReplicas: {{ .Values.backend.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.backend.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.backend.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}
