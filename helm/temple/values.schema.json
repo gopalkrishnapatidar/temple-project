@@ -7,11 +7,39 @@
     "backend": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["replicaCount", "image", "existingSecret", "config", "resources"],
+      "required": ["replicaCount", "autoscaling", "image", "existingSecret", "config", "resources"],
       "properties": {
         "replicaCount": {
           "type": "integer",
           "minimum": 1
+        },
+        "autoscaling": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "minReplicas",
+            "maxReplicas",
+            "targetCPUUtilizationPercentage"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "minReplicas": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxReplicas": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "targetCPUUtilizationPercentage": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
         },
         "image": {
           "type": "object",
